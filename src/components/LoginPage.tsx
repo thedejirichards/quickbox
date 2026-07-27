@@ -1,14 +1,36 @@
 import { useState } from 'react';
 import Carousel from './Carousel';
 import AccountTypeSelection from './AccountTypeSelection';
+import CorporateOnboarding from './CorporateOnboarding';
 import BvnValidation from './BvnValidation';
 import OtpVerification from './OtpVerification';
 import TermsAndConditions from './TermsAndConditions';
 import CreatePassword from './CreatePassword';
 import Dashboard from './Dashboard';
-import KycModule from './KycModule';
 
-type View = 'login' | 'account-type' | 'bvn-validation' | 'otp-verification' | 'terms' | 'create-password' | 'dashboard' | 'kyc';
+type View = 'login' | 'account-type' | 'corporate-onboarding' | 'bvn-validation' | 'otp-verification' | 'terms' | 'create-password' | 'dashboard';
+type AccountType = 'individual' | 'business';
+
+interface DemoAccount {
+  email: string;
+  password: string;
+  displayName: string;
+  accountType: AccountType;
+  verificationComplete: boolean;
+}
+
+const DEMO_ACCOUNTS = {
+  individualSuccess: { email: 'solomon@gmail.com', password: 'Password123', displayName: 'Solomon', accountType: 'individual', verificationComplete: true },
+  individualKycComplete: { email: 'james@gmail.com', password: 'Password123', displayName: 'James Okafor', accountType: 'individual', verificationComplete: true },
+  individualKycIncomplete: { email: 'amaka@gmail.com', password: 'Password123', displayName: 'Amaka Chukwu', accountType: 'individual', verificationComplete: false },
+  businessSuccess: { email: 'corporate@gmail.com', password: 'Password123', displayName: 'Acme Ventures Ltd', accountType: 'business', verificationComplete: false },
+  businessKybComplete: { email: 'globex@gmail.com', password: 'Password123', displayName: 'Globex Industries Ltd', accountType: 'business', verificationComplete: true },
+  businessKybIncomplete: { email: 'initech@gmail.com', password: 'Password123', displayName: 'Initech Nigeria Ltd', accountType: 'business', verificationComplete: false },
+} satisfies Record<string, DemoAccount>;
+
+type DemoAccountKey = keyof typeof DEMO_ACCOUNTS;
+
+const WRONG_PASSWORD = 'WrongPassword1';
 
 export default function LoginPage() {
   const [view, setView] = useState<View>('login');
@@ -17,25 +39,60 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState('');
-  const [kycComplete, setKycComplete] = useState(false);
+  const [verificationComplete, setVerificationComplete] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [signInTab, setSignInTab] = useState<AccountType>('individual');
+  const [loggedInAccountType, setLoggedInAccountType] = useState<AccountType>('individual');
+  const [displayName, setDisplayName] = useState('Solomon');
+  const [loginError, setLoginError] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const match = Object.values(DEMO_ACCOUNTS).find(
+      (account) => account.accountType === signInTab && account.email === email && account.password === password
+    );
+
+    if (!match) {
+      setLoginError(true);
+      return;
+    }
+
+    setLoggedInAccountType(match.accountType);
+    setDisplayName(match.displayName);
+    setVerificationComplete(match.verificationComplete);
+    // Not-yet-verified customers see the KYC/KYB modal immediately on login;
+    // already-verified customers go straight to the dashboard, uninterrupted.
+    setShowVerificationModal(!match.verificationComplete);
+    setView('dashboard');
+  };
+
+  const fillDemoCredentials = (accountKey: DemoAccountKey, outcome: 'success' | 'failure' = 'success') => {
+    const account = DEMO_ACCOUNTS[accountKey];
+    setSignInTab(account.accountType);
+    setEmail(account.email);
+    setPassword(outcome === 'success' ? account.password : WRONG_PASSWORD);
+    setLoginError(false);
   };
 
   const handleProceed = (type: string) => {
     if (type === 'individual') {
       setView('bvn-validation');
+    } else if (type === 'b2b') {
+      setView('corporate-onboarding');
     }
   };
 
   if (view === 'dashboard') {
     return (
       <Dashboard
-        kycComplete={kycComplete}
-        onCompleteKyc={() => setView('kyc')}
+        accountType={loggedInAccountType}
+        displayName={displayName}
+        verificationComplete={verificationComplete}
+        showVerificationModal={showVerificationModal}
+        onDismissVerificationModal={() => setShowVerificationModal(false)}
+        onVerificationComplete={() => setVerificationComplete(true)}
         onLogout={() => {
-          setKycComplete(false);
+          setVerificationComplete(false);
           setView('login');
         }}
       />
@@ -64,7 +121,28 @@ export default function LoginPage() {
             <div className="login-form-wrapper">
               <div className="login-header">
                 <h1>Sign In</h1>
-                <p>Sign in to continue meeting your urgent needs</p>
+                <p>
+                  {signInTab === 'individual'
+                    ? 'Sign in to continue meeting your urgent needs'
+                    : 'Sign in to manage your corporate account'}
+                </p>
+              </div>
+
+              <div className="tabs">
+                <button
+                  type="button"
+                  className={`tab ${signInTab === 'individual' ? 'active' : ''}`}
+                  onClick={() => setSignInTab('individual')}
+                >
+                  Individual
+                </button>
+                <button
+                  type="button"
+                  className={`tab ${signInTab === 'business' ? 'active' : ''}`}
+                  onClick={() => setSignInTab('business')}
+                >
+                  Business
+                </button>
               </div>
 
               <form onSubmit={handleSubmit} className="login-form">
@@ -173,8 +251,51 @@ export default function LoginPage() {
               </div>
 
               <p className="signup-link">
-                New user? <a href="#" onClick={(e) => { e.preventDefault(); setView('account-type'); }}>Sign Up</a>
+                {signInTab === 'individual' ? (
+                  <>
+                    New user? <a href="#" onClick={(e) => { e.preventDefault(); setView('account-type'); }}>Sign Up</a>
+                  </>
+                ) : (
+                  <>
+                    New to QuickBucks for Business?{' '}
+                    <a href="#" onClick={(e) => { e.preventDefault(); setView('corporate-onboarding'); }}>Get Started</a>
+                  </>
+                )}
               </p>
+
+              <div className="demo-credentials">
+                <span className="demo-credentials-label">Demo quick-fill &middot; Individual</span>
+                <div className="demo-credentials-row">
+                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualSuccess', 'success')}>
+                    Success
+                  </button>
+                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualSuccess', 'failure')}>
+                    Failure
+                  </button>
+                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualKycComplete')}>
+                    KYC Completed
+                  </button>
+                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualKycIncomplete')}>
+                    KYC Not Completed
+                  </button>
+                </div>
+
+                <span className="demo-credentials-label">Demo quick-fill &middot; Business</span>
+                <div className="demo-credentials-row">
+                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('businessSuccess', 'success')}>
+                    Success
+                  </button>
+                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('businessSuccess', 'failure')}>
+                    Failure
+                  </button>
+                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('businessKybComplete')}>
+                    KYB Completed
+                  </button>
+                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('businessKybIncomplete')}>
+                    KYB Not Completed
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -183,6 +304,10 @@ export default function LoginPage() {
               onBack={() => setView('login')}
               onProceed={handleProceed}
             />
+          )}
+
+          {view === 'corporate-onboarding' && (
+            <CorporateOnboarding onBack={() => setView('account-type')} />
           )}
 
           {view === 'bvn-validation' && (
@@ -212,21 +337,34 @@ export default function LoginPage() {
           {view === 'create-password' && (
             <CreatePassword
               onBack={() => setView('terms')}
-              onComplete={() => setView('dashboard')}
-            />
-          )}
-
-          {view === 'kyc' && (
-            <KycModule
-              onBack={() => setView('dashboard')}
-              onSubmit={() => {
-                setKycComplete(true);
+              onComplete={() => {
+                setLoggedInAccountType('individual');
+                setDisplayName('Solomon');
                 setView('dashboard');
+                setShowVerificationModal(true);
               }}
             />
           )}
+
         </div>
       </main>
+
+      {loginError && (
+        <div className="modal-overlay" onClick={() => setLoginError(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon error">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+            </div>
+            <h3>Invalid credentials</h3>
+            <p>Please check your email/phone number and password, then try again.</p>
+            <button className="modal-button" onClick={() => setLoginError(false)}>Try Again</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

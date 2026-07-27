@@ -1,10 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
+import EmploymentStatus from './EmploymentStatus';
+import KybFlow from './KybFlow';
+import VehicleFinance from './VehicleFinance';
 
 interface DashboardProps {
-  kycComplete: boolean;
-  onCompleteKyc: () => void;
+  accountType: 'individual' | 'business';
+  displayName: string;
+  verificationComplete: boolean;
+  showVerificationModal: boolean;
+  onDismissVerificationModal: () => void;
+  onVerificationComplete: () => void;
   onLogout: () => void;
 }
+
+type DashboardStep = 'home' | 'verification';
 
 interface LoanProduct {
   id: number;
@@ -92,12 +101,18 @@ function SocialIcon({ type }: { type: string }) {
   }
 }
 
-export default function Dashboard({ kycComplete, onCompleteKyc, onLogout }: DashboardProps) {
+export default function Dashboard({ accountType, displayName, verificationComplete, showVerificationModal, onDismissVerificationModal, onVerificationComplete, onLogout }: DashboardProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
+  const [dashboardStep, setDashboardStep] = useState<DashboardStep>('home');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const verificationLabel = accountType === 'business' ? 'KYB' : 'KYC';
+  const verificationDescription = accountType === 'business'
+    ? 'Verify your business to unlock all features and increase your loan eligibility.'
+    : 'Verify your identity to unlock all features and increase your loan eligibility.';
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -108,6 +123,11 @@ export default function Dashboard({ kycComplete, onCompleteKyc, onLogout }: Dash
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const startVerificationFlow = () => {
+    onDismissVerificationModal();
+    setDashboardStep('verification');
+  };
 
   return (
     <div className="dashboard-page">
@@ -132,7 +152,7 @@ export default function Dashboard({ kycComplete, onCompleteKyc, onLogout }: Dash
               </svg>
             </div>
             <button className="topbar-user-trigger" onClick={() => setDropdownOpen(!dropdownOpen)}>
-              <span className="topbar-user-name">Solomon</span>
+              <span className="topbar-user-name">{displayName}</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`topbar-chevron ${dropdownOpen ? 'open' : ''}`}>
                 <polyline points="6 9 12 15 18 9" />
               </svg>
@@ -174,7 +194,7 @@ export default function Dashboard({ kycComplete, onCompleteKyc, onLogout }: Dash
               <button
                 key={item.key}
                 className={`sidebar-nav-item ${activeNav === item.key ? 'active' : ''}`}
-                onClick={() => { setActiveNav(item.key); setSidebarOpen(false); }}
+                onClick={() => { setActiveNav(item.key); setDashboardStep('home'); setSidebarOpen(false); }}
               >
                 <img src={item.icon} alt="" className="sidebar-nav-icon" />
                 <span>{item.label}</span>
@@ -185,7 +205,7 @@ export default function Dashboard({ kycComplete, onCompleteKyc, onLogout }: Dash
           <div className="sidebar-account">
             <button
               className={`sidebar-nav-item ${activeNav === 'account' ? 'active' : ''}`}
-              onClick={() => setActiveNav('account')}
+              onClick={() => { setActiveNav('account'); setDashboardStep('home'); }}
             >
               <img src="/sidebarIcons/user.svg" alt="" className="sidebar-nav-icon" />
               <span>My Account</span>
@@ -200,26 +220,52 @@ export default function Dashboard({ kycComplete, onCompleteKyc, onLogout }: Dash
         <div className={`dashboard-overlay ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
 
         <main className="dashboard-content">
-          {!kycComplete && (
-            <div className="kyc-banner">
-              <div className="kyc-banner-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF8200" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-              </div>
-              <div className="kyc-banner-text">
-                <strong>Complete your KYC</strong>
-                <p>Verify your identity to unlock all features and increase your loan eligibility.</p>
-              </div>
-              <button className="kyc-banner-button" onClick={onCompleteKyc}>Complete KYC</button>
-            </div>
+          {dashboardStep === 'verification' && (
+            accountType === 'business' ? (
+              <KybFlow
+                onBack={() => setDashboardStep('home')}
+                onSubmit={() => {
+                  onVerificationComplete();
+                  setDashboardStep('home');
+                }}
+              />
+            ) : (
+              <EmploymentStatus
+                onBack={() => setDashboardStep('home')}
+                onSubmit={() => {
+                  onVerificationComplete();
+                  setDashboardStep('home');
+                }}
+              />
+            )
           )}
 
-          <div className="dashboard-greeting">
-            <h1>Hi, Solomon</h1>
-          </div>
+          {dashboardStep === 'home' && activeNav === 'vehicle-finance' && (
+            <VehicleFinance accountType={accountType} />
+          )}
+
+          {dashboardStep === 'home' && activeNav !== 'vehicle-finance' && (
+            <>
+              {!verificationComplete && (
+                <div className="kyc-banner">
+                  <div className="kyc-banner-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF8200" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </div>
+                  <div className="kyc-banner-text">
+                    <strong>Complete your {verificationLabel}</strong>
+                    <p>{verificationDescription}</p>
+                  </div>
+                  <button className="kyc-banner-button" onClick={startVerificationFlow}>Complete {verificationLabel}</button>
+                </div>
+              )}
+
+              <div className="dashboard-greeting">
+                <h1>Hi, {displayName}</h1>
+              </div>
 
           <div className="summary-cards">
             <div className="summary-card qualified">
@@ -361,6 +407,8 @@ export default function Dashboard({ kycComplete, onCompleteKyc, onLogout }: Dash
               ))}
             </div>
           </div>
+            </>
+          )}
         </main>
       </div>
 
@@ -377,6 +425,24 @@ export default function Dashboard({ kycComplete, onCompleteKyc, onLogout }: Dash
           <SocialIcon type="facebook" />
         </div>
       </footer>
+
+      {showVerificationModal && !verificationComplete && (
+        <div className="modal-overlay" onClick={onDismissVerificationModal}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-icon warning">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF8200" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h3>Complete Your {verificationLabel}</h3>
+            <p>{verificationDescription}</p>
+            <button className="modal-button" onClick={startVerificationFlow}>Complete {verificationLabel}</button>
+            <button className="modal-dismiss" onClick={onDismissVerificationModal}>Maybe Later</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

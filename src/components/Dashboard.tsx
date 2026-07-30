@@ -316,13 +316,36 @@ export default function Dashboard({ accountType, displayName, verificationComple
             <MyAccount
               accountType={accountType}
               displayName={displayName}
-              employmentDetailsComplete={verificationComplete}
-              onManageEmploymentDetails={startVerificationFlow}
+              verificationComplete={verificationComplete}
+              onManageVerification={startVerificationFlow}
             />
           )}
 
           {dashboardStep === 'home' && activeNav !== 'vehicle-finance' && activeNav !== 'account' && (
             <>
+              {accountType === 'business' && !verificationComplete && (
+                <div className="employment-notice business-details-alert">
+                  <div className="employment-notice-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF8200" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </div>
+                  <div className="employment-notice-text">
+                    <strong>Enter your business details</strong>
+                    <p>Add your business information to unlock all features and increase your loan eligibility.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="employment-notice-button"
+                    onClick={() => { setActiveNav('account'); setDashboardStep('home'); }}
+                  >
+                    Add Business Details
+                  </button>
+                </div>
+              )}
+
               <div className="dashboard-greeting">
                 <h1>Hi, {displayName}</h1>
               </div>

@@ -1651,6 +1651,10 @@
 
 .employment-notice-button:hover { background: #e67400; }
 
+.business-details-alert {
+  margin-bottom: 24px;
+}
+
 /* Layout */
 .dashboard-page {
   display: flex;

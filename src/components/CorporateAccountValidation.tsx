@@ -30,7 +30,7 @@ export default function CorporateAccountValidation({ onBack, onSignIn, onSendOtp
   return (
     <div className="bvn-page">
       <div className="bvn-content">
-        <CorpProgressBar totalSteps={5} currentStep={1} />
+        <CorpProgressBar totalSteps={4} currentStep={1} />
 
         <div className="bvn-header">
           <h1>Welcome to QuickBucks!</h1>

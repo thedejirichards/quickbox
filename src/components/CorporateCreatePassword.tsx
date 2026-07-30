@@ -66,7 +66,7 @@ export default function CorporateCreatePassword({ onBack, onSignIn, onNext }: Co
   return (
     <div className="bvn-page">
       <div className="bvn-content">
-        <CorpProgressBar totalSteps={5} currentStep={4} />
+        <CorpProgressBar totalSteps={4} currentStep={3} />
 
         <div className="bvn-header">
           <h1>Create password</h1>

@@ -3,7 +3,6 @@ import Carousel from './Carousel';
 import AccountTypeSelection from './AccountTypeSelection';
 import CorporateAccountValidation from './CorporateAccountValidation';
 import CorporateOtpVerification from './CorporateOtpVerification';
-import CorporateBusinessDetails from './CorporateBusinessDetails';
 import CorporateCreatePassword from './CorporateCreatePassword';
 import BvnValidation from './BvnValidation';
 import OtpVerification from './OtpVerification';
@@ -12,7 +11,7 @@ import CreatePassword from './CreatePassword';
 import PinCreation from './PinCreation';
 import Dashboard from './Dashboard';
 
-type View = 'login' | 'account-type' | 'corporate-onboarding' | 'corporate-otp-verification' | 'corporate-business-details' | 'corporate-create-password' | 'corporate-pin-creation' | 'bvn-validation' | 'otp-verification' | 'terms' | 'create-password' | 'pin-creation' | 'dashboard';
+type View = 'login' | 'account-type' | 'corporate-onboarding' | 'corporate-otp-verification' | 'corporate-create-password' | 'corporate-pin-creation' | 'bvn-validation' | 'otp-verification' | 'terms' | 'create-password' | 'pin-creation' | 'dashboard';
 type AccountType = 'individual' | 'business';
 
 // Demo data: the phone number linked to a corporate account, as it would be looked up server-side.
@@ -329,20 +328,13 @@ export default function LoginPage() {
             <CorporateOtpVerification
               maskedPhone={maskedPhone}
               onBack={() => setView('corporate-onboarding')}
-              onNext={() => setView('corporate-business-details')}
-            />
-          )}
-
-          {view === 'corporate-business-details' && (
-            <CorporateBusinessDetails
-              onBack={() => setView('corporate-otp-verification')}
               onNext={() => setView('corporate-create-password')}
             />
           )}
 
           {view === 'corporate-create-password' && (
             <CorporateCreatePassword
-              onBack={() => setView('corporate-business-details')}
+              onBack={() => setView('corporate-otp-verification')}
               onSignIn={() => setView('login')}
               onNext={() => setView('corporate-pin-creation')}
             />
@@ -350,6 +342,8 @@ export default function LoginPage() {
 
           {view === 'corporate-pin-creation' && (
             <PinCreation
+              totalSteps={4}
+              currentStep={4}
               onBack={() => setView('corporate-create-password')}
               onSignIn={() => setView('login')}
               onSubmit={() => {
@@ -394,6 +388,8 @@ export default function LoginPage() {
 
           {view === 'pin-creation' && (
             <PinCreation
+              totalSteps={5}
+              currentStep={5}
               onBack={() => setView('create-password')}
               onSignIn={() => setView('login')}
               onSubmit={() => {

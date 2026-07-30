@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import CorpProgressBar from './CorpProgressBar';
 
 interface PinCreationProps {
+  totalSteps: number;
+  currentStep: number;
   onBack: () => void;
   onSignIn: () => void;
   onSubmit: () => void;
@@ -20,7 +22,7 @@ function WarningIcon() {
 const PIN_LENGTH = 4;
 const emptyPin = () => Array(PIN_LENGTH).fill('');
 
-export default function PinCreation({ onBack, onSignIn, onSubmit }: PinCreationProps) {
+export default function PinCreation({ totalSteps, currentStep, onBack, onSignIn, onSubmit }: PinCreationProps) {
   const [pin, setPin] = useState<string[]>(emptyPin());
   const [confirmPin, setConfirmPin] = useState<string[]>(emptyPin());
   const [mismatch, setMismatch] = useState(false);
@@ -70,7 +72,7 @@ export default function PinCreation({ onBack, onSignIn, onSubmit }: PinCreationP
   return (
     <div className="bvn-page">
       <div className="bvn-content">
-        <CorpProgressBar totalSteps={5} currentStep={5} />
+        <CorpProgressBar totalSteps={totalSteps} currentStep={currentStep} />
 
         <div className="bvn-header">
           <h1>PIN Creation</h1>

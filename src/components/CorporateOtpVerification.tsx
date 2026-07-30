@@ -86,7 +86,7 @@ export default function CorporateOtpVerification({ maskedPhone, onBack, onNext }
   return (
     <div className="bvn-page">
       <div className="bvn-content">
-        <CorpProgressBar totalSteps={5} currentStep={2} />
+        <CorpProgressBar totalSteps={4} currentStep={2} />
 
         <div className="bvn-header">
           <h1>OTP verification</h1>

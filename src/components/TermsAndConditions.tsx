@@ -32,6 +32,10 @@ export default function TermsAndConditions({ onBack, onAccept }: TermsAndConditi
           <div className="progress-step">
             <div className="step-circle">4</div>
           </div>
+          <div className="progress-line" />
+          <div className="progress-step">
+            <div className="step-circle">5</div>
+          </div>
         </div>
 
         <div className="terms-container">

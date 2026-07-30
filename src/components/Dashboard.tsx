@@ -1,19 +1,21 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import EmploymentStatus from './EmploymentStatus';
 import KybFlow from './KybFlow';
+import MyAccount from './MyAccount';
 import VehicleFinance from './VehicleFinance';
+import VendorSite from './VendorSite';
+import type { VendorCar } from './vendorCars';
+import { sampleVehicleFinanceRequests, type VehicleFinanceRequest } from './vehicleFinanceRequests';
 
 interface DashboardProps {
   accountType: 'individual' | 'business';
   displayName: string;
   verificationComplete: boolean;
-  showVerificationModal: boolean;
-  onDismissVerificationModal: () => void;
   onVerificationComplete: () => void;
   onLogout: () => void;
 }
 
-type DashboardStep = 'home' | 'verification';
+type DashboardStep = 'home' | 'verification' | 'partners';
 
 interface LoanProduct {
   id: number;
@@ -101,18 +103,15 @@ function SocialIcon({ type }: { type: string }) {
   }
 }
 
-export default function Dashboard({ accountType, displayName, verificationComplete, showVerificationModal, onDismissVerificationModal, onVerificationComplete, onLogout }: DashboardProps) {
+export default function Dashboard({ accountType, displayName, verificationComplete, onVerificationComplete, onLogout }: DashboardProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [promoIndex, setPromoIndex] = useState(0);
   const [dashboardStep, setDashboardStep] = useState<DashboardStep>('home');
+  const [vehicleFinanceRequests, setVehicleFinanceRequests] = useState<VehicleFinanceRequest[]>(sampleVehicleFinanceRequests);
+  const [vfInitialTab, setVfInitialTab] = useState<'new' | 'pending' | 'approved'>('new');
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const verificationLabel = accountType === 'business' ? 'KYB' : 'KYC';
-  const verificationDescription = accountType === 'business'
-    ? 'Verify your business to unlock all features and increase your loan eligibility.'
-    : 'Verify your identity to unlock all features and increase your loan eligibility.';
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -125,9 +124,71 @@ export default function Dashboard({ accountType, displayName, verificationComple
   }, []);
 
   const startVerificationFlow = () => {
-    onDismissVerificationModal();
     setDashboardStep('verification');
   };
+
+  const handleBnplComplete = (car: VendorCar) => {
+    const request: VehicleFinanceRequest = {
+      id: `${Date.now()}`,
+      vehicle: `${car.make} ${car.model} ${car.year} ${car.color}`,
+      image: car.image,
+      price: car.price,
+      dealer: 'Autochek',
+      status: 'pending',
+      dateRequested: new Date().toISOString(),
+      make: car.make,
+      model: car.model,
+      year: car.year,
+      color: car.color,
+      location: car.location,
+      mileage: car.mileage,
+    };
+    setVehicleFinanceRequests((prev) => [request, ...prev]);
+    setVfInitialTab('pending');
+    setActiveNav('vehicle-finance');
+    setDashboardStep('home');
+  };
+
+  const handleCorporateFinanceComplete = (car: VendorCar, quantity: number) => {
+    const unitPrice = Number(car.price.replace(/[^\d]/g, '')) || 0;
+    const totalPrice = quantity > 1 ? unitPrice * quantity : unitPrice;
+    const request: VehicleFinanceRequest = {
+      id: `${Date.now()}`,
+      vehicle: `${car.make} ${car.model} ${car.year} ${car.color}`,
+      image: car.image,
+      price: quantity > 1 ? `₦${totalPrice.toLocaleString()}` : car.price,
+      dealer: 'Autochek',
+      status: 'pending',
+      dateRequested: new Date().toISOString(),
+      make: car.make,
+      model: car.model,
+      year: car.year,
+      color: car.color,
+      location: car.location,
+      mileage: car.mileage,
+      quantity: quantity > 1 ? quantity : undefined,
+      corporateStage: 'inspection-schedule',
+    };
+    setVehicleFinanceRequests((prev) => [request, ...prev]);
+    setVfInitialTab('pending');
+    setActiveNav('vehicle-finance');
+    setDashboardStep('home');
+  };
+
+  const updateVehicleFinanceRequest = useCallback((id: string, updates: Partial<VehicleFinanceRequest>) => {
+    setVehicleFinanceRequests((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+  }, []);
+
+  if (dashboardStep === 'partners') {
+    return (
+      <VendorSite
+        accountType={accountType}
+        onBack={() => setDashboardStep('home')}
+        onBnplComplete={handleBnplComplete}
+        onCorporateFinanceComplete={handleCorporateFinanceComplete}
+      />
+    );
+  }
 
   return (
     <div className="dashboard-page">
@@ -241,28 +302,27 @@ export default function Dashboard({ accountType, displayName, verificationComple
           )}
 
           {dashboardStep === 'home' && activeNav === 'vehicle-finance' && (
-            <VehicleFinance accountType={accountType} />
+            <VehicleFinance
+              accountType={accountType}
+              displayName={displayName}
+              onInitiateRequest={() => setDashboardStep('partners')}
+              requests={vehicleFinanceRequests}
+              initialTab={vfInitialTab}
+              onUpdateRequest={updateVehicleFinanceRequest}
+            />
           )}
 
-          {dashboardStep === 'home' && activeNav !== 'vehicle-finance' && (
-            <>
-              {!verificationComplete && (
-                <div className="kyc-banner">
-                  <div className="kyc-banner-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF8200" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                  </div>
-                  <div className="kyc-banner-text">
-                    <strong>Complete your {verificationLabel}</strong>
-                    <p>{verificationDescription}</p>
-                  </div>
-                  <button className="kyc-banner-button" onClick={startVerificationFlow}>Complete {verificationLabel}</button>
-                </div>
-              )}
+          {dashboardStep === 'home' && activeNav === 'account' && (
+            <MyAccount
+              accountType={accountType}
+              displayName={displayName}
+              employmentDetailsComplete={verificationComplete}
+              onManageEmploymentDetails={startVerificationFlow}
+            />
+          )}
 
+          {dashboardStep === 'home' && activeNav !== 'vehicle-finance' && activeNav !== 'account' && (
+            <>
               <div className="dashboard-greeting">
                 <h1>Hi, {displayName}</h1>
               </div>
@@ -425,24 +485,6 @@ export default function Dashboard({ accountType, displayName, verificationComple
           <SocialIcon type="facebook" />
         </div>
       </footer>
-
-      {showVerificationModal && !verificationComplete && (
-        <div className="modal-overlay" onClick={onDismissVerificationModal}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-icon warning">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF8200" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </div>
-            <h3>Complete Your {verificationLabel}</h3>
-            <p>{verificationDescription}</p>
-            <button className="modal-button" onClick={startVerificationFlow}>Complete {verificationLabel}</button>
-            <button className="modal-dismiss" onClick={onDismissVerificationModal}>Maybe Later</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

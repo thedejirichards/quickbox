@@ -74,3 +74,4 @@ export default defineConfig([
 
 ```
 # quickbox
+# quickBox-Updated

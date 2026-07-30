@@ -51,6 +51,10 @@ export default function CreatePassword({ onBack, onComplete }: CreatePasswordPro
           <div className="progress-step active">
             <div className="step-circle">4</div>
           </div>
+          <div className="progress-line" />
+          <div className="progress-step">
+            <div className="step-circle">5</div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="bvn-form">
@@ -125,7 +129,7 @@ export default function CreatePassword({ onBack, onComplete }: CreatePasswordPro
               Back
             </button>
             <button type="submit" className="continue-button">
-              CREATE ACCOUNT
+              NEXT
             </button>
           </div>
         </form>

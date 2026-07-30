@@ -38,7 +38,10 @@ function TrashIcon() {
   );
 }
 
+type Step = 'form' | 'confirm' | 'success';
+
 export default function PersonalDocumentationModal({ onClose, onSubmit, initialData, readOnly = false }: PersonalDocumentationModalProps) {
+  const [step, setStep] = useState<Step>('form');
   const [transferFileName, setTransferFileName] = useState(initialData?.transferFileName ?? '');
   const [staffIdFileName, setStaffIdFileName] = useState(initialData?.staffIdFileName ?? '');
   const [idType, setIdType] = useState(initialData?.idType ?? '');
@@ -57,8 +60,56 @@ export default function PersonalDocumentationModal({ onClose, onSubmit, initialD
       return;
     }
 
-    onSubmit({ transferFileName, staffIdFileName, idType, idNumber });
+    setStep('confirm');
   };
+
+  if (step === 'confirm') {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-icon warning">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="8" y1="13" x2="16" y2="13" />
+              <line x1="8" y1="17" x2="16" y2="17" />
+            </svg>
+          </div>
+          <h3>Confirm Submission</h3>
+          <p>
+            You're about to submit your blank transfer of ownership, staff ID, and {selectedIdType?.fieldLabel ?? 'ID'} for review. Do you want to proceed?
+          </p>
+          <button
+            className="modal-button"
+            onClick={() => {
+              onSubmit({ transferFileName, staffIdFileName, idType, idNumber });
+              setStep('success');
+            }}
+          >
+            Confirm &amp; Submit
+          </button>
+          <button className="modal-button-outline" onClick={() => setStep('form')}>Back</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'success') {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-icon success">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h3>Documentation Submitted</h3>
+          <p>Your documents have been submitted for review. You'll be notified once they're approved.</p>
+          <button className="modal-button" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>

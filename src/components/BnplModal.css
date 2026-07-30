@@ -1,0 +1,388 @@
+.bnpl-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 21, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.bnpl-card {
+  width: 100%;
+  max-width: 420px;
+  background: #f4f5f6;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.bnpl-card.wide {
+  max-width: 460px;
+}
+
+.bnpl-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #fff;
+}
+
+.bnpl-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bnpl-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #0EA8A0;
+}
+
+.bnpl-brand-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.1;
+}
+
+.bnpl-brand-sub {
+  font-size: 8.5px;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.bnpl-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.bnpl-title-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111111;
+  color: #fff;
+  padding: 13px 40px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+
+.bnpl-back {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+}
+
+.bnpl-body {
+  padding: 26px 22px;
+}
+
+/* Fetching */
+.bnpl-fetching {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 0;
+}
+
+.bnpl-spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 4px solid #e5e7eb;
+  border-top-color: #142850;
+  animation: bnpl-spin 0.9s linear infinite;
+}
+
+@keyframes bnpl-spin {
+  to { transform: rotate(360deg); }
+}
+
+.bnpl-fetching h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #142850;
+  margin: 0;
+}
+
+/* Eligibility */
+.bnpl-eligibility p {
+  font-size: 13.5px;
+  color: #374151;
+  line-height: 1.6;
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.bnpl-eligibility p strong {
+  color: #111827;
+}
+
+/* Form */
+.bnpl-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bnpl-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.bnpl-form input {
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+}
+
+.bnpl-form input:focus {
+  border-color: #E6007E;
+}
+
+.bnpl-form select {
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+.bnpl-form select:focus {
+  border-color: #FF8200;
+}
+
+/* Buttons */
+.bnpl-primary {
+  width: 100%;
+  padding: 14px;
+  background: #E6007E;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.bnpl-primary:hover {
+  background: #c40069;
+}
+
+.bnpl-secondary {
+  flex: 1;
+  padding: 14px;
+  background: #111111;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Confirmation */
+.bnpl-confirmation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.bnpl-qb-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #142850;
+  margin-bottom: 8px;
+}
+
+.bnpl-confirmation-text {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.55;
+  margin: 0 0 6px;
+}
+
+.bnpl-confirmation-question {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #E6007E;
+  margin: 0 0 18px;
+}
+
+.bnpl-confirmation-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.bnpl-confirmation-actions .bnpl-primary {
+  width: auto;
+  flex: 1;
+}
+
+/* Payment */
+.bnpl-payment-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.bnpl-payment-ref {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.bnpl-payment-amount {
+  font-size: 17px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.bnpl-payment-bar {
+  background: #142850;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-radius: 6px 6px 0 0;
+}
+
+.bnpl-payment-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 18px;
+}
+
+.bnpl-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #9ca3af;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.bnpl-payment-option.selected .bnpl-radio {
+  border-color: #E6007E;
+}
+
+.bnpl-payment-option.selected .bnpl-radio::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #E6007E;
+}
+
+.bnpl-payment-option-label {
+  flex: 1;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.bnpl-pay-btn {
+  margin-bottom: 14px;
+}
+
+.bnpl-disclaimer {
+  text-align: center;
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* Success */
+.bnpl-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.bnpl-success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #16A34A;
+  margin-bottom: 6px;
+}
+
+.bnpl-success h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.bnpl-success p {
+  font-size: 12.5px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+@media (max-width: 480px) {
+  .bnpl-card {
+    max-width: 100%;
+  }
+}

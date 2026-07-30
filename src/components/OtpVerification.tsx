@@ -6,8 +6,13 @@ interface OtpVerificationProps {
   onSuccess: () => void;
 }
 
+type Stage = 'otp' | 'details';
+
 export default function OtpVerification({ maskedPhone, onBack, onSuccess }: OtpVerificationProps) {
+  const [stage, setStage] = useState<Stage>('otp');
   const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
+  const [email, setEmail] = useState('');
+  const [homeAddress, setHomeAddress] = useState('');
   const [error, setError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -48,11 +53,18 @@ export default function OtpVerification({ maskedPhone, onBack, onSuccess }: OtpV
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const code = otp.join('');
-    if (code === '000000') {
-      setError('Invalid OTP. Please enter the correct code sent to your phone.');
+
+    if (stage === 'otp') {
+      const code = otp.join('');
+      if (code === '000000') {
+        setError('Invalid OTP. Please enter the correct code sent to your phone.');
+        return;
+      }
+      setError('');
+      setStage('details');
       return;
     }
+
     onSuccess();
   };
 
@@ -80,6 +92,10 @@ export default function OtpVerification({ maskedPhone, onBack, onSuccess }: OtpV
           <div className="progress-step">
             <div className="step-circle">4</div>
           </div>
+          <div className="progress-line" />
+          <div className="progress-step">
+            <div className="step-circle">5</div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="otp-form">
@@ -96,9 +112,42 @@ export default function OtpVerification({ maskedPhone, onBack, onSuccess }: OtpV
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onPaste={handlePaste}
                 className="otp-input"
+                disabled={stage === 'details'}
               />
             ))}
           </div>
+
+          {stage === 'details' && (
+            <>
+              <div className="otp-message">
+                <p><strong>Phone number verified.</strong> Please provide a few more details to continue.</p>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="email">Email Address</label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="home-address">Home Address</label>
+                <input
+                  id="home-address"
+                  type="text"
+                  placeholder="Enter your home address"
+                  value={homeAddress}
+                  onChange={(e) => setHomeAddress(e.target.value)}
+                  required
+                />
+              </div>
+            </>
+          )}
 
           {error && <p className="otp-error">{error}</p>}
 
@@ -107,14 +156,16 @@ export default function OtpVerification({ maskedPhone, onBack, onSuccess }: OtpV
               Back
             </button>
             <button type="submit" className="continue-button">
-              VERIFY OTP
+              {stage === 'otp' ? 'VERIFY OTP' : 'CONTINUE'}
             </button>
           </div>
         </form>
 
-        <p className="resend-link">
-          Didn't receive the code? <button type="button" className="resend-button">Resend OTP</button>
-        </p>
+        {stage === 'otp' && (
+          <p className="resend-link">
+            Didn't receive the code? <button type="button" className="resend-button">Resend OTP</button>
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
 import PersonalDocumentationModal, { type DocumentationData } from './PersonalDocumentationModal';
 import BusinessDocumentationModal, { type BusinessDocumentationData } from './BusinessDocumentationModal';
+import type { VehicleFinanceRequest } from './vehicleFinanceRequests';
+import LoanRequestDetail from './LoanRequestDetail';
 
 interface VehicleFinanceProps {
   accountType: 'individual' | 'business';
+  displayName: string;
+  onInitiateRequest: () => void;
+  requests: VehicleFinanceRequest[];
+  initialTab?: 'new' | 'pending' | 'approved';
+  onUpdateRequest: (id: string, updates: Partial<VehicleFinanceRequest>) => void;
 }
 
 type DocStatus = 'not-submitted' | 'pending' | 'approved';
+type Tab = 'new' | 'pending' | 'approved';
 
-const PENDING_TO_APPROVED_DELAY_MS = 10000;
+const PENDING_TO_APPROVED_DELAY_MS = 5000;
 
 const howItWorks = [
   { id: 1, title: 'Eligibility', description: "Vehicle Finance on QuickBox is available for salary earners and business owners with verifiable income who meet the Bank's Risk Acceptance Criteria (RAC)." },
@@ -22,7 +30,100 @@ const dealers = [
   { id: 2, name: 'Autochek', image: '/Dealers-Partners-card-image2.png' },
 ];
 
-export default function VehicleFinance({ accountType }: VehicleFinanceProps) {
+function StatusBadge({ status }: { status: VehicleFinanceRequest['status'] }) {
+  if (status === 'approved') {
+    return (
+      <span className="vf-status-badge approved">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="9 12 11 14 15 10" />
+        </svg>
+        Approved
+      </span>
+    );
+  }
+  if (status === 'declined') {
+    return (
+      <span className="vf-status-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        Declined
+      </span>
+    );
+  }
+  return (
+    <span className="vf-status-badge pending">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      Pending
+    </span>
+  );
+}
+
+interface RequestsTableProps {
+  title: string;
+  requests: VehicleFinanceRequest[];
+  emptyMessage: string;
+  onView: (request: VehicleFinanceRequest) => void;
+}
+
+function RequestsTable({ title, requests, emptyMessage, onView }: RequestsTableProps) {
+  return (
+    <div className="vf-section">
+      <h3 className="vf-section-title">{title}</h3>
+      {requests.length === 0 ? (
+        <div className="vf-empty-state">{emptyMessage}</div>
+      ) : (
+        <div className="vf-requests-table-wrap">
+          <table className="vf-requests-table">
+            <thead>
+              <tr>
+                <th>S/N</th>
+                <th>Vehicle</th>
+                <th>Dealer</th>
+                <th>Amount</th>
+                <th>Date requested</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((r, i) => (
+                <tr key={r.id}>
+                  <td>{i + 1}</td>
+                  <td>
+                    <span className="vf-request-vehicle-name">{r.vehicle}</span>
+                  </td>
+                  <td>{r.dealer}</td>
+                  <td>{r.price}</td>
+                  <td>{new Date(r.dateRequested).toLocaleDateString()}</td>
+                  <td>
+                    <StatusBadge status={r.status} />
+                  </td>
+                  <td>
+                    <button className="vf-request-view-btn" onClick={() => onView(r)}>
+                      View Request
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function VehicleFinance({ accountType, displayName, onInitiateRequest, requests, initialTab = 'new', onUpdateRequest }: VehicleFinanceProps) {
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const [viewingRequestId, setViewingRequestId] = useState<string | null>(null);
+  const viewingRequest = requests.find((r) => r.id === viewingRequestId) ?? null;
   const [alertDismissed, setAlertDismissed] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
   const [docStatus, setDocStatus] = useState<DocStatus>('not-submitted');
@@ -34,6 +135,23 @@ export default function VehicleFinance({ accountType }: VehicleFinanceProps) {
     const timer = setTimeout(() => setDocStatus('approved'), PENDING_TO_APPROVED_DELAY_MS);
     return () => clearTimeout(timer);
   }, [docStatus]);
+
+  const pendingRequests = requests.filter((r) => r.status === 'pending');
+  const approvedRequests = requests.filter((r) => r.status === 'approved');
+
+  if (viewingRequest) {
+    return (
+      <div className="vf-page">
+        <LoanRequestDetail
+          request={viewingRequest}
+          accountType={accountType}
+          displayName={displayName}
+          onBack={() => setViewingRequestId(null)}
+          onUpdateRequest={onUpdateRequest}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="vf-page">
@@ -68,6 +186,38 @@ export default function VehicleFinance({ accountType }: VehicleFinanceProps) {
         </div>
       </div>
 
+      <div className="vf-tabs">
+        <button className={`vf-tab ${tab === 'new' ? 'active' : ''}`} onClick={() => setTab('new')}>
+          New Request
+        </button>
+        <button className={`vf-tab ${tab === 'pending' ? 'active' : ''}`} onClick={() => setTab('pending')}>
+          Pending Request{pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ''}
+        </button>
+        <button className={`vf-tab ${tab === 'approved' ? 'active' : ''}`} onClick={() => setTab('approved')}>
+          Approved Request{approvedRequests.length > 0 ? ` (${approvedRequests.length})` : ''}
+        </button>
+      </div>
+
+      {tab === 'pending' && (
+        <RequestsTable
+          title="Pending Requests"
+          requests={pendingRequests}
+          emptyMessage="You have no pending vehicle finance requests yet."
+          onView={(r) => setViewingRequestId(r.id)}
+        />
+      )}
+
+      {tab === 'approved' && (
+        <RequestsTable
+          title="Approved Requests"
+          requests={approvedRequests}
+          emptyMessage="You have no approved vehicle finance requests yet."
+          onView={(r) => setViewingRequestId(r.id)}
+        />
+      )}
+
+      {tab === 'new' && (
+        <>
       <div className="vf-eligibility">
         <div className="vf-eligibility-amount">
           <span className="vf-eligibility-label">You are eligible for</span>
@@ -137,12 +287,20 @@ export default function VehicleFinance({ accountType }: VehicleFinanceProps) {
                   </span>
                   <span className="vf-dealer-name">{dealer.name}</span>
                 </div>
-                <button className="vf-dealer-btn" disabled>Initiate Request</button>
+                <button
+                  className="vf-dealer-btn"
+                  disabled={docStatus !== 'approved'}
+                  onClick={onInitiateRequest}
+                >
+                  Initiate Request
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
+        </>
+      )}
 
       {showDocModal && accountType === 'business' && (
         <BusinessDocumentationModal
@@ -165,7 +323,6 @@ export default function VehicleFinance({ accountType }: VehicleFinanceProps) {
           onSubmit={(data) => {
             setSubmittedDocs(data);
             setDocStatus('pending');
-            setShowDocModal(false);
           }}
         />
       )}

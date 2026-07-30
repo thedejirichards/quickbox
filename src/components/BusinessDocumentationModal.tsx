@@ -3,6 +3,7 @@ import { useState } from 'react';
 export interface BusinessDocumentationData {
   files: Record<string, string>;
   directorIdTypes: Record<number, string>;
+  directorIdNumbers: Record<number, string>;
 }
 
 interface BusinessDocumentationModalProps {
@@ -35,10 +36,10 @@ const directors = [
 ];
 
 const idTypeOptions = [
-  { value: 'nin', label: 'National Identity Number (NIN)' },
-  { value: 'passport', label: 'International Passport' },
-  { value: 'drivers-license', label: "Driver's License" },
-  { value: 'voters-card', label: "Voter's Card" },
+  { value: 'nin', label: 'National Identity Number (NIN)', fieldLabel: 'NIN', placeholder: 'Enter NIN' },
+  { value: 'passport', label: 'International Passport', fieldLabel: 'Passport Number', placeholder: 'Enter passport number' },
+  { value: 'drivers-license', label: "Driver's License", fieldLabel: "Driver's License Number", placeholder: "Enter driver's license number" },
+  { value: 'voters-card', label: "Voter's Card", fieldLabel: "Voter's Card Number", placeholder: "Enter voter's card number" },
 ];
 
 function AttachIcon() {
@@ -83,10 +84,11 @@ export default function BusinessDocumentationModal({ onClose, onSubmit, initialD
   const [step, setStep] = useState<Step>('documents');
   const [files, setFiles] = useState<Record<string, string>>(initialData?.files ?? {});
   const [directorIdTypes, setDirectorIdTypes] = useState<Record<number, string>>(initialData?.directorIdTypes ?? {});
+  const [directorIdNumbers, setDirectorIdNumbers] = useState<Record<number, string>>(initialData?.directorIdNumbers ?? {});
   const [error, setError] = useState('');
 
   const allDocsUploaded = businessDocuments.every((doc) => files[doc.key]);
-  const allDirectorIdsSet = directors.every((d) => directorIdTypes[d.id]);
+  const allDirectorIdsSet = directors.every((d) => directorIdTypes[d.id] && directorIdNumbers[d.id]);
 
   const handleFileChange = (key: string, file: File | null) => {
     setFiles((prev) => ({ ...prev, [key]: file?.name ?? '' }));
@@ -106,7 +108,7 @@ export default function BusinessDocumentationModal({ onClose, onSubmit, initialD
   const handleDirectorsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!allDirectorIdsSet) {
-      setError('Please select an ID type for each director.');
+      setError('Please provide an ID type and number for each director.');
       return;
     }
     setError('');
@@ -139,24 +141,33 @@ export default function BusinessDocumentationModal({ onClose, onSubmit, initialD
 
             <h4 className="doc-section-heading">Copy of government issued ID for all directors</h4>
 
-            {directors.map((director, i) => (
-              <div key={director.id} className="doc-director-block">
-                <div className="doc-director-heading">
-                  Director {i + 1}
-                  <span className="doc-director-dash">&mdash;</span>
-                  <span className="doc-director-name">{director.name}</span>
+            {directors.map((director, i) => {
+              const selectedType = idTypeOptions.find((opt) => opt.value === directorIdTypes[director.id]);
+              return (
+                <div key={director.id} className="doc-director-block">
+                  <div className="doc-director-heading">
+                    Director {i + 1}
+                    <span className="doc-director-dash">&mdash;</span>
+                    <span className="doc-director-name">{director.name}</span>
+                  </div>
+                  <div className="doc-field-group">
+                    <label className="doc-field-label">Type of ID</label>
+                    <select value={directorIdTypes[director.id] ?? ''} disabled>
+                      <option value="">&mdash;</option>
+                      {idTypeOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedType && (
+                    <div className="doc-field-group">
+                      <label className="doc-field-label">{selectedType.fieldLabel}</label>
+                      <input type="text" value={directorIdNumbers[director.id] ?? ''} readOnly disabled />
+                    </div>
+                  )}
                 </div>
-                <div className="doc-field-group">
-                  <label className="doc-field-label">Type of ID</label>
-                  <select value={directorIdTypes[director.id] ?? ''} disabled>
-                    <option value="">&mdash;</option>
-                    {idTypeOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -228,34 +239,59 @@ export default function BusinessDocumentationModal({ onClose, onSubmit, initialD
           <h4 className="doc-section-heading">Copy of government issued ID for all directors</h4>
 
           <form onSubmit={handleDirectorsSubmit} className="doc-modal-form">
-            {directors.map((director, i) => (
-              <div key={director.id} className="doc-director-block">
-                <div className="doc-director-heading">
-                  Director {i + 1}
-                  <span className="doc-director-dash">&mdash;</span>
-                  <span className="doc-director-name">{director.name}</span>
+            {directors.map((director, i) => {
+              const selectedType = idTypeOptions.find((opt) => opt.value === directorIdTypes[director.id]);
+              return (
+                <div key={director.id} className="doc-director-block">
+                  <div className="doc-director-heading">
+                    Director {i + 1}
+                    <span className="doc-director-dash">&mdash;</span>
+                    <span className="doc-director-name">{director.name}</span>
+                  </div>
+                  <div className="doc-field-group">
+                    <label className="doc-field-label" htmlFor={`director-id-type-${director.id}`}>
+                      Type of ID <span className="doc-required">*</span>
+                    </label>
+                    <select
+                      id={`director-id-type-${director.id}`}
+                      value={directorIdTypes[director.id] ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setDirectorIdTypes((prev) => ({ ...prev, [director.id]: value }));
+                        setDirectorIdNumbers((prev) => ({ ...prev, [director.id]: '' }));
+                        setError('');
+                      }}
+                      required
+                    >
+                      <option value="">Pick an option</option>
+                      {idTypeOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {selectedType && (
+                    <div className="doc-field-group">
+                      <label className="doc-field-label" htmlFor={`director-id-number-${director.id}`}>
+                        {selectedType.fieldLabel} <span className="doc-required">*</span>
+                      </label>
+                      <input
+                        id={`director-id-number-${director.id}`}
+                        type="text"
+                        placeholder={selectedType.placeholder}
+                        value={directorIdNumbers[director.id] ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setDirectorIdNumbers((prev) => ({ ...prev, [director.id]: value }));
+                          setError('');
+                        }}
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="doc-field-group">
-                  <label className="doc-field-label" htmlFor={`director-id-type-${director.id}`}>
-                    Type of ID <span className="doc-required">*</span>
-                  </label>
-                  <select
-                    id={`director-id-type-${director.id}`}
-                    value={directorIdTypes[director.id] ?? ''}
-                    onChange={(e) => {
-                      setDirectorIdTypes((prev) => ({ ...prev, [director.id]: e.target.value }));
-                      setError('');
-                    }}
-                    required
-                  >
-                    <option value="">Pick an option</option>
-                    {idTypeOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {error && <p className="otp-error">{error}</p>}
 
@@ -317,7 +353,7 @@ export default function BusinessDocumentationModal({ onClose, onSubmit, initialD
           Your prequalification documents are currently undergoing review. You will be notified once
           they have been approved and then you can proceed to request for Vehicle Finance
         </p>
-        <button className="modal-button" onClick={() => onSubmit({ files, directorIdTypes })}>RETURN</button>
+        <button className="modal-button" onClick={() => onSubmit({ files, directorIdTypes, directorIdNumbers })}>RETURN</button>
       </div>
     </div>
   );

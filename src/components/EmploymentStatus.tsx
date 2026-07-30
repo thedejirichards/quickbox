@@ -138,8 +138,8 @@ export default function EmploymentStatus({ onBack, onSubmit }: EmploymentStatusP
     <div className="kyc-info-page">
       <div className="bvn-content">
         <div className="bvn-header">
-          <h1>KYC Information</h1>
-          <p>Employment Information</p>
+          <h1>Employment Details</h1>
+          <p>Tell us about your employment information</p>
         </div>
 
         <form onSubmit={handleSubmit} className="kyc-info-form">
@@ -349,7 +349,7 @@ export default function EmploymentStatus({ onBack, onSubmit }: EmploymentStatusP
               Back
             </button>
             <button type="submit" className="continue-button">
-              SUBMIT KYC
+              SUBMIT EMPLOYMENT DETAILS
             </button>
           </div>
         </form>

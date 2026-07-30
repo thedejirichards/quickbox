@@ -1,0 +1,259 @@
+.cvf-card.wide {
+  max-width: 460px;
+}
+
+.cvf-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cvf-car-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.cvf-car-summary img {
+  width: 64px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.cvf-car-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cvf-car-price {
+  font-size: 12.5px;
+  color: #6b7280;
+}
+
+.cvf-rfq-toggle {
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cvf-rfq-option {
+  flex: 1;
+  padding: 10px;
+  background: #fff;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cvf-rfq-option + .cvf-rfq-option {
+  border-left: 1px solid #d1d5db;
+}
+
+.cvf-rfq-option.selected {
+  background: #142850;
+  color: #fff;
+}
+
+.cvf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.cvf-field input {
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.cvf-field-hint {
+  font-weight: 400;
+  font-size: 11.5px;
+  color: #9ca3af;
+}
+
+.cvf-quotation,
+.cvf-offer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cvf-quotation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.cvf-quotation-row strong {
+  color: #111827;
+  font-size: 13.5px;
+}
+
+.cvf-quotation-total {
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cvf-quotation-total strong {
+  font-size: 15px;
+  color: #142850;
+}
+
+.cvf-availability-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.cvf-inspection {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.cvf-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cvf-checklist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #374151;
+}
+
+.cvf-checklist-result {
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.cvf-confirmation-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.cvf-confirmation-actions .bnpl-primary {
+  width: auto;
+  flex: 1;
+}
+
+.cvf-pin-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.cvf-pin-text {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cvf-pin-input {
+  width: 140px;
+  padding: 14px;
+  text-align: center;
+  letter-spacing: 10px;
+  font-size: 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  font-family: inherit;
+}
+
+.cvf-pin-input:focus {
+  border-color: #E6007E;
+}
+
+.cvf-delivery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.cvf-delivery-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.cvf-delivery-code {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #142850;
+  background: #fff;
+  border: 1px dashed #142850;
+  border-radius: 8px;
+  padding: 14px 24px;
+  margin: 6px 0 4px;
+}
+
+.cvf-delivery-hint {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.55;
+  margin: 0 0 18px;
+}
+
+.cvf-rejected {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cvf-rejected p {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.cvf-completed p {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0;
+}

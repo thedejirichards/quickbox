@@ -1,15 +1,29 @@
 import { useState } from 'react';
 import Carousel from './Carousel';
 import AccountTypeSelection from './AccountTypeSelection';
-import CorporateOnboarding from './CorporateOnboarding';
+import CorporateAccountValidation from './CorporateAccountValidation';
+import CorporateOtpVerification from './CorporateOtpVerification';
+import CorporateBusinessDetails from './CorporateBusinessDetails';
+import CorporateCreatePassword from './CorporateCreatePassword';
 import BvnValidation from './BvnValidation';
 import OtpVerification from './OtpVerification';
 import TermsAndConditions from './TermsAndConditions';
 import CreatePassword from './CreatePassword';
+import PinCreation from './PinCreation';
 import Dashboard from './Dashboard';
 
-type View = 'login' | 'account-type' | 'corporate-onboarding' | 'bvn-validation' | 'otp-verification' | 'terms' | 'create-password' | 'dashboard';
+type View = 'login' | 'account-type' | 'corporate-onboarding' | 'corporate-otp-verification' | 'corporate-business-details' | 'corporate-create-password' | 'corporate-pin-creation' | 'bvn-validation' | 'otp-verification' | 'terms' | 'create-password' | 'pin-creation' | 'dashboard';
 type AccountType = 'individual' | 'business';
+
+// Demo data: the phone number linked to a corporate account, as it would be looked up server-side.
+const DEMO_CORPORATE_PHONE = '8134567835';
+
+function maskCorporatePhone(localDigits: string) {
+  const first = localDigits.slice(0, 3);
+  const last = localDigits.slice(-2);
+  const masked = '*'.repeat(Math.max(localDigits.length - first.length - last.length, 0));
+  return `+234${first}${masked}${last}`;
+}
 
 interface DemoAccount {
   email: string;
@@ -40,7 +54,6 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState('');
   const [verificationComplete, setVerificationComplete] = useState(false);
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [signInTab, setSignInTab] = useState<AccountType>('individual');
   const [loggedInAccountType, setLoggedInAccountType] = useState<AccountType>('individual');
   const [displayName, setDisplayName] = useState('Solomon');
@@ -60,9 +73,6 @@ export default function LoginPage() {
     setLoggedInAccountType(match.accountType);
     setDisplayName(match.displayName);
     setVerificationComplete(match.verificationComplete);
-    // Not-yet-verified customers see the KYC/KYB modal immediately on login;
-    // already-verified customers go straight to the dashboard, uninterrupted.
-    setShowVerificationModal(!match.verificationComplete);
     setView('dashboard');
   };
 
@@ -88,8 +98,6 @@ export default function LoginPage() {
         accountType={loggedInAccountType}
         displayName={displayName}
         verificationComplete={verificationComplete}
-        showVerificationModal={showVerificationModal}
-        onDismissVerificationModal={() => setShowVerificationModal(false)}
         onVerificationComplete={() => setVerificationComplete(true)}
         onLogout={() => {
           setVerificationComplete(false);
@@ -273,10 +281,10 @@ export default function LoginPage() {
                     Failure
                   </button>
                   <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualKycComplete')}>
-                    KYC Completed
+                    Employment Details Completed
                   </button>
                   <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualKycIncomplete')}>
-                    KYC Not Completed
+                    Employment Details Not Completed
                   </button>
                 </div>
 
@@ -307,7 +315,50 @@ export default function LoginPage() {
           )}
 
           {view === 'corporate-onboarding' && (
-            <CorporateOnboarding onBack={() => setView('account-type')} />
+            <CorporateAccountValidation
+              onBack={() => setView('account-type')}
+              onSignIn={() => setView('login')}
+              onSendOtp={() => {
+                setMaskedPhone(maskCorporatePhone(DEMO_CORPORATE_PHONE));
+                setView('corporate-otp-verification');
+              }}
+            />
+          )}
+
+          {view === 'corporate-otp-verification' && (
+            <CorporateOtpVerification
+              maskedPhone={maskedPhone}
+              onBack={() => setView('corporate-onboarding')}
+              onNext={() => setView('corporate-business-details')}
+            />
+          )}
+
+          {view === 'corporate-business-details' && (
+            <CorporateBusinessDetails
+              onBack={() => setView('corporate-otp-verification')}
+              onNext={() => setView('corporate-create-password')}
+            />
+          )}
+
+          {view === 'corporate-create-password' && (
+            <CorporateCreatePassword
+              onBack={() => setView('corporate-business-details')}
+              onSignIn={() => setView('login')}
+              onNext={() => setView('corporate-pin-creation')}
+            />
+          )}
+
+          {view === 'corporate-pin-creation' && (
+            <PinCreation
+              onBack={() => setView('corporate-create-password')}
+              onSignIn={() => setView('login')}
+              onSubmit={() => {
+                setLoggedInAccountType('business');
+                setDisplayName('Acme Ventures Ltd');
+                setVerificationComplete(false);
+                setView('dashboard');
+              }}
+            />
           )}
 
           {view === 'bvn-validation' && (
@@ -337,11 +388,18 @@ export default function LoginPage() {
           {view === 'create-password' && (
             <CreatePassword
               onBack={() => setView('terms')}
-              onComplete={() => {
+              onComplete={() => setView('pin-creation')}
+            />
+          )}
+
+          {view === 'pin-creation' && (
+            <PinCreation
+              onBack={() => setView('create-password')}
+              onSignIn={() => setView('login')}
+              onSubmit={() => {
                 setLoggedInAccountType('individual');
                 setDisplayName('Solomon');
                 setView('dashboard');
-                setShowVerificationModal(true);
               }}
             />
           )}

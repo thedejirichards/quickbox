@@ -3155,7 +3155,7 @@
   border-bottom: none;
 }
 
-.vf-request-vehicle-name {
+.vf-request-id {
   font-weight: 600;
   color: #1a1a1a;
   white-space: nowrap;
@@ -3440,6 +3440,7 @@
   text-align: right;
 }
 
+.vf-req-main,
 .vf-req-side {
   display: flex;
   flex-direction: column;

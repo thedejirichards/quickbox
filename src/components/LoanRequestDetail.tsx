@@ -247,13 +247,14 @@ function CloseIcon() {
 }
 
 interface VehicleInfoCardProps {
+  title: string;
   carDetails: { label: string; value: string }[];
 }
 
-function VehicleInfoCard({ carDetails }: VehicleInfoCardProps) {
+function VehicleInfoCard({ title, carDetails }: VehicleInfoCardProps) {
   return (
     <div className="vf-req-info-card">
-      <h3 className="vf-req-info-title">Vehicle Information</h3>
+      <h3 className="vf-req-info-title">{title}</h3>
       <div className="vf-req-details">
         {carDetails.map((row, i) => (
           <div key={row.label} className={`vf-req-detail-row ${i % 2 === 1 ? 'alt' : ''}`}>
@@ -425,8 +426,9 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
     { label: 'Car Rating/Grade', value: gradeFor(request.mileage) },
     { label: 'VIN /Chasis number', value: vinFor(request) },
     { label: 'Car location(State)', value: parseState(request.location) },
-    ...(request.quantity ? [{ label: 'Quantity', value: `${request.quantity} units` }] : []),
   ];
+
+  const vehicleCount = request.quantity && request.quantity > 1 ? request.quantity : 1;
 
   const customerActions = [
     { id: 'equity', label: `Fund your account with the equity contribution of ${formatNaira(minEquity)}`, done: equityFunded },
@@ -498,7 +500,15 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
       />
 
       <div className="vf-req-grid">
-        <VehicleInfoCard carDetails={carDetails} />
+        <div className="vf-req-main">
+          {Array.from({ length: vehicleCount }, (_, i) => (
+            <VehicleInfoCard
+              key={i}
+              title={vehicleCount > 1 ? `Vehicle ${i + 1} Information` : 'Vehicle Information'}
+              carDetails={carDetails}
+            />
+          ))}
+        </div>
 
         <div className="vf-req-side">
           <RepaymentCard

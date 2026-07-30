@@ -84,7 +84,7 @@ function RequestsTable({ title, requests, emptyMessage, onView }: RequestsTableP
             <thead>
               <tr>
                 <th>S/N</th>
-                <th>Vehicle</th>
+                <th>Request ID</th>
                 <th>Dealer</th>
                 <th>Amount</th>
                 <th>Date requested</th>
@@ -97,7 +97,7 @@ function RequestsTable({ title, requests, emptyMessage, onView }: RequestsTableP
                 <tr key={r.id}>
                   <td>{i + 1}</td>
                   <td>
-                    <span className="vf-request-vehicle-name">{r.vehicle}</span>
+                    <span className="vf-request-id">{r.id}</span>
                   </td>
                   <td>{r.dealer}</td>
                   <td>{r.price}</td>

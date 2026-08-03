@@ -2124,7 +2124,7 @@
   font-size: 14px;
   font-weight: 700;
   color: #1a1a1a;
-  margin: 4px 0 -6px;
+  margin: 4px 0 14px;
 }
 
 .doc-field-group select,
@@ -2216,15 +2216,46 @@
   color: #1a1a1a;
 }
 
-.doc-director-heading .doc-director-dash {
-  color: #9ca3af;
-  font-weight: 400;
-  margin: 0 4px;
+.doc-director-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.doc-director-heading .doc-director-name {
-  font-weight: 500;
-  color: #4b5563;
+.doc-remove-director-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--sans);
+  cursor: pointer;
+  padding: 0;
+}
+
+.doc-remove-director-btn:hover {
+  text-decoration: underline;
+}
+
+.doc-add-director-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  background: #fff;
+  border: 1.5px dashed #FF8200;
+  color: #FF8200;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--sans);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.doc-add-director-btn:hover {
+  background: #fef3e2;
 }
 
 /* --- Menu Button (mobile) --- */

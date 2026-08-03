@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import './BnplModal.css';
 import './CorporateVehicleFinanceModal.css';
+import OfferLetterSection from './OfferLetterPage';
+import { InspectionSection, PinSigningSection, ProcessingSection, CompletedSection } from './CorporateStageSections';
+import { IndividualInspectionSection, DecisionSection } from './IndividualStageSections';
 import type { CorporateFinanceStage, VehicleFinanceRequest } from './vehicleFinanceRequests';
 
 interface LoanRequestDetailProps {
@@ -32,18 +35,6 @@ const CORPORATE_STAGE_ORDER: CorporateFinanceStage[] = [
   'delivery-code',
   'completed',
 ];
-
-const stageTitles: Record<CorporateFinanceStage, string> = {
-  'inspection-schedule': 'Schedule Vehicle Inspection',
-  'inspection-pending': 'Vehicle Inspection',
-  'inspection-report': 'Inspection Report',
-  'inspection-rejected': 'Inspection Report',
-  'offer-letter': 'Offer Letter',
-  pin: 'Confirm & Sign',
-  processing: 'Processing',
-  'delivery-code': 'Delivery Code',
-  completed: 'Financing Completed',
-};
 
 const timeSlotLabels: Record<string, string> = {
   '9-11am': '9:00 AM - 11:00 AM',
@@ -86,6 +77,10 @@ const INDIVIDUAL_JOURNEY_STEPS: JourneyStep[] = [
 
 function businessJourneyIndex(stage?: CorporateFinanceStage) {
   switch (stage) {
+    case 'inspection-pending':
+    case 'inspection-report':
+    case 'inspection-rejected':
+      return 1;
     case 'offer-letter':
     case 'pin':
       return 2;
@@ -95,14 +90,15 @@ function businessJourneyIndex(stage?: CorporateFinanceStage) {
     case 'completed':
       return 4;
     default:
-      return 1;
+      return 0;
   }
 }
 
 function individualJourneyIndex(request: VehicleFinanceRequest) {
   if (request.status !== 'pending') return 3;
   if (request.inspectionReviewed) return 2;
-  return 1;
+  if (request.inspectionDate) return 1;
+  return 0;
 }
 
 interface JourneyProgressProps {
@@ -211,17 +207,6 @@ function BellIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 01-3.46 0" />
-    </svg>
-  );
-}
-
-function DocumentIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="8" y1="13" x2="16" y2="13" />
-      <line x1="8" y1="17" x2="16" y2="17" />
     </svg>
   );
 }
@@ -351,13 +336,8 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
   const [showNotifications, setShowNotifications] = useState(false);
   const [inspectionDate, setInspectionDate] = useState(request.inspectionDate ?? '');
   const [inspectionTime, setInspectionTime] = useState(request.inspectionTime ?? '');
-  const [pin, setPin] = useState('');
-  const [showInspectionReport, setShowInspectionReport] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [scheduleModalStep, setScheduleModalStep] = useState<ScheduleModalStep>('form');
-  const [showProcessModal, setShowProcessModal] = useState(false);
-  const [showCompletedModal, setShowCompletedModal] = useState(false);
-  const [showInspectionDocModal, setShowInspectionDocModal] = useState(false);
   const [reportReady, setReportReady] = useState(false);
   const [showDecisionModal, setShowDecisionModal] = useState(false);
   const [decisionReady, setDecisionReady] = useState(false);
@@ -499,133 +479,108 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
         hasError={isBusinessFlow ? request.corporateStage === 'inspection-rejected' : request.status === 'declined'}
       />
 
-      <div className="vf-req-grid">
-        <div className="vf-req-main">
-          {Array.from({ length: vehicleCount }, (_, i) => (
-            <VehicleInfoCard
-              key={i}
-              title={vehicleCount > 1 ? `Vehicle ${i + 1} Information` : 'Vehicle Information'}
-              carDetails={carDetails}
+      {(isBusinessFlow ? request.corporateStage === 'inspection-schedule' : request.status === 'pending' && !inspectionScheduled) ? (
+        <div className="vf-req-grid">
+          <div className="vf-req-main">
+            {Array.from({ length: vehicleCount }, (_, i) => (
+              <VehicleInfoCard
+                key={i}
+                title={vehicleCount > 1 ? `Vehicle ${i + 1} Information` : 'Vehicle Information'}
+                carDetails={carDetails}
+              />
+            ))}
+          </div>
+
+          <div className="vf-req-side">
+            <RepaymentCard
+              eligibleAmount={eligibleAmount}
+              loanAmount={loanAmount}
+              monthlyRepayment={monthlyRepayment}
+              isBusinessFlow={isBusinessFlow}
+              insurancePremium={insurancePremium}
             />
-          ))}
-        </div>
+            <EquityCard minEquity={minEquity} equityFunded={equityFunded} isBusinessFlow={isBusinessFlow} />
 
-        <div className="vf-req-side">
-          <RepaymentCard
-            eligibleAmount={eligibleAmount}
-            loanAmount={loanAmount}
-            monthlyRepayment={monthlyRepayment}
-            isBusinessFlow={isBusinessFlow}
-            insurancePremium={insurancePremium}
-          />
-          <EquityCard minEquity={minEquity} equityFunded={equityFunded} isBusinessFlow={isBusinessFlow} />
-
-          {!isBusinessFlow && (
             <div className="vf-req-info-card">
-              <h3 className="vf-req-info-title">Pending Customer Actions</h3>
-              <ul className="vf-req-actions-list">
-                {customerActions.map((action) => (
-                  <li key={action.id} className={`vf-req-action-item ${action.done ? 'done' : ''}`}>
-                    <span className="vf-req-action-icon">{action.done ? <CheckIcon /> : <ClockIcon />}</span>
-                    {action.label}
-                  </li>
-                ))}
-              </ul>
+              <h3 className="vf-req-info-title">Next Step</h3>
+              <p className="vf-req-hint">Schedule your vehicle inspection to move this request forward.</p>
+              <button
+                className="vf-req-btn-primary"
+                onClick={() => {
+                  setScheduleModalStep('form');
+                  setScheduleModalOpen(true);
+                }}
+              >
+                Schedule Inspection
+              </button>
             </div>
-          )}
-        </div>
-      </div>
 
-      {isBusinessFlow && request.corporateStage && (
-        <div className="vf-req-next-step-banner">
-          <div>
-            <span className="vf-req-next-step-label">{request.corporateStage === 'completed' ? 'Status' : 'Next Step'}</span>
-            <h4>{stageTitles[request.corporateStage]}</h4>
+            {!isBusinessFlow && (
+              <div className="vf-req-info-card">
+                <h3 className="vf-req-info-title">Pending Customer Actions</h3>
+                <ul className="vf-req-actions-list">
+                  {customerActions.map((action) => (
+                    <li key={action.id} className={`vf-req-action-item ${action.done ? 'done' : ''}`}>
+                      <span className="vf-req-action-icon">{action.done ? <CheckIcon /> : <ClockIcon />}</span>
+                      {action.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-          {request.corporateStage === 'inspection-schedule' && (
-            <button
-              className="vf-req-btn-primary vf-req-btn-inline"
-              onClick={() => {
-                setScheduleModalStep('form');
-                setScheduleModalOpen(true);
-              }}
-            >
-              Schedule Inspection
-            </button>
-          )}
-          {request.corporateStage !== 'inspection-schedule' && request.corporateStage !== 'completed' && (
-            <button className="vf-req-btn-primary vf-req-btn-inline" onClick={() => setShowProcessModal(true)}>
-              Continue
-            </button>
-          )}
-          {request.corporateStage === 'completed' && (
-            <span className="vf-status-badge approved">
-              <CheckIcon />
-              Completed
-            </span>
-          )}
         </div>
-      )}
-
-      {!isBusinessFlow && request.status === 'pending' && !inspectionScheduled && (
-        <div className="vf-req-next-step-banner">
-          <div>
-            <span className="vf-req-next-step-label">Next Step</span>
-            <h4>Schedule Vehicle Inspection</h4>
-          </div>
-          <button
-            className="vf-req-btn-primary vf-req-btn-inline"
-            onClick={() => {
-              setScheduleModalStep('form');
-              setScheduleModalOpen(true);
-            }}
-          >
-            Schedule Inspection
-          </button>
-        </div>
-      )}
-
-      {!isBusinessFlow && request.status === 'pending' && inspectionScheduled && !inspectionReviewed && (
-        <div className="vf-req-next-step-banner">
-          <div>
-            <span className="vf-req-next-step-label">Next Step</span>
-            <h4>Review Inspection Report</h4>
-            <p className="vf-req-next-step-subtext">
-              {reportReady
-                ? 'Your inspection report is ready. You can now review it and continue.'
-                : "You'll be able to continue as soon as the inspection report is received."}
-            </p>
-          </div>
-          <button
-            className="vf-req-btn-primary vf-req-btn-inline"
-            disabled={!reportReady}
-            onClick={() => setShowInspectionDocModal(true)}
-          >
-            Review Inspection Report
-          </button>
-        </div>
-      )}
-
-      {!isBusinessFlow && request.status === 'pending' && inspectionReviewed && (
-        <div className="vf-req-next-step-banner">
-          <div>
-            <span className="vf-req-next-step-label">Next Step</span>
-            <h4>Final Decision</h4>
-            <p className="vf-req-next-step-subtext">
-              Your inspection report has been reviewed. Continue to see Access Bank's decision on your request.
-            </p>
-          </div>
-          <button
-            className="vf-req-btn-primary vf-req-btn-inline"
-            onClick={() => {
-              setDecisionReady(false);
-              setShowDecisionModal(true);
-            }}
-          >
-            View Decision
-          </button>
-        </div>
-      )}
+      ) : isBusinessFlow && (request.corporateStage === 'inspection-pending' || request.corporateStage === 'inspection-report' || request.corporateStage === 'inspection-rejected') ? (
+        <InspectionSection
+          subStage={request.corporateStage}
+          dealer={request.dealer}
+          fileName={`Vehicle_Inspection_Report_${vinFor(request)}.pdf`}
+          dateLabel={addDays(request.dateRequested, 2).toLocaleDateString()}
+          checklist={inspectionChecklist}
+          onReject={() => onUpdateRequest(request.id, { corporateStage: 'inspection-rejected' })}
+          onAccept={() => onUpdateRequest(request.id, { corporateStage: 'offer-letter' })}
+          onBackToRequests={onBack}
+        />
+      ) : isBusinessFlow && request.corporateStage === 'offer-letter' ? (
+        <OfferLetterSection
+          fileName={`Offer_Letter_${vinFor(request)}.pdf`}
+          dealer={request.dealer}
+          dateLabel={addDays(request.dateRequested, 3).toLocaleDateString()}
+          totalPayableLabel={formatNaira(totalPayable)}
+          onAccept={() => onUpdateRequest(request.id, { corporateStage: 'pin' })}
+        />
+      ) : isBusinessFlow && request.corporateStage === 'pin' ? (
+        <PinSigningSection onSubmit={() => onUpdateRequest(request.id, { corporateStage: 'processing' })} />
+      ) : isBusinessFlow && (request.corporateStage === 'processing' || request.corporateStage === 'delivery-code') ? (
+        <ProcessingSection
+          subStage={request.corporateStage}
+          deliveryCode={request.deliveryCode}
+          onVehicleCollected={() => onUpdateRequest(request.id, { corporateStage: 'completed', status: 'approved' })}
+        />
+      ) : isBusinessFlow && request.corporateStage === 'completed' ? (
+        <CompletedSection />
+      ) : !isBusinessFlow && inspectionScheduled && !inspectionReviewed ? (
+        <IndividualInspectionSection
+          reportReady={reportReady}
+          dealer={request.dealer}
+          fileName={`Vehicle_Inspection_Report_${vinFor(request)}.pdf`}
+          dateLabel={inspectionDate ? new Date(inspectionDate).toLocaleDateString() : addDays(request.dateRequested, 2).toLocaleDateString()}
+          checklist={inspectionChecklist}
+          onAcknowledge={() => onUpdateRequest(request.id, { inspectionReviewed: true })}
+        />
+      ) : !isBusinessFlow ? (
+        <DecisionSection
+          status={request.status}
+          make={request.make}
+          model={request.model}
+          decisionRequested={showDecisionModal}
+          decisionReady={decisionReady}
+          onViewDecision={() => {
+            setDecisionReady(false);
+            setShowDecisionModal(true);
+          }}
+        />
+      ) : null}
 
       {scheduleModalOpen && scheduleModalStep === 'form' && (
         <div className="modal-overlay" onClick={() => setScheduleModalOpen(false)}>
@@ -705,258 +660,10 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
             <p>You have successfully scheduled your inspection for {scheduleSummary}.</p>
             <button
               className="modal-button"
-              onClick={() => {
-                setScheduleModalOpen(false);
-                if (isBusinessFlow) setShowProcessModal(true);
-              }}
+              onClick={() => setScheduleModalOpen(false)}
             >
               Continue
             </button>
-          </div>
-        </div>
-      )}
-
-      {showInspectionDocModal && (
-        <div className="bnpl-overlay" onClick={() => setShowInspectionDocModal(false)}>
-          <div className="bnpl-card cvf-card" onClick={(e) => e.stopPropagation()}>
-            <div className="vf-req-modal-header">
-              <h3>Inspection Report</h3>
-              <button className="bnpl-close" onClick={() => setShowInspectionDocModal(false)} aria-label="Close">
-                <CloseIcon />
-              </button>
-            </div>
-            <div className="bnpl-body">
-              <div className="cvf-inspection">
-                <div className="doc-upload-box readonly filled">
-                  <span className="doc-upload-icon"><DocumentIcon /></span>
-                  <div className="cvf-report-file">
-                    <span className="doc-upload-text">{`Vehicle_Inspection_Report_${vinFor(request)}.pdf`}</span>
-                    <span className="cvf-report-file-meta">
-                      Submitted by {request.dealer} on {inspectionDate ? new Date(inspectionDate).toLocaleDateString() : addDays(request.dateRequested, 2).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="cvf-report-toggle"
-                  onClick={() => setShowInspectionReport((v) => !v)}
-                >
-                  {showInspectionReport ? 'Hide report summary' : 'View report summary'}
-                </button>
-                {showInspectionReport && (
-                  <ul className="cvf-checklist">
-                    {inspectionChecklist.map((item) => (
-                      <li key={item.id}>
-                        <span>{item.label}</span>
-                        <span className="cvf-checklist-result">{item.result}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <button
-                  className="vf-req-btn-primary"
-                  onClick={() => {
-                    onUpdateRequest(request.id, { inspectionReviewed: true });
-                    setShowInspectionDocModal(false);
-                  }}
-                >
-                  Acknowledge Inspection Report
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showProcessModal && request.corporateStage && (
-        <div className="bnpl-overlay" onClick={() => setShowProcessModal(false)}>
-          <div className="bnpl-card cvf-card" onClick={(e) => e.stopPropagation()}>
-            <div className="vf-req-modal-header">
-              <h3>{stageTitles[request.corporateStage]}</h3>
-              <button className="bnpl-close" onClick={() => setShowProcessModal(false)} aria-label="Close">
-                <CloseIcon />
-              </button>
-            </div>
-            <div className="bnpl-body">
-              {request.corporateStage === 'inspection-pending' && (
-                <div className="bnpl-fetching">
-                  <div className="bnpl-spinner" />
-                  <h3>Vendor is conducting the inspection</h3>
-                </div>
-              )}
-
-              {request.corporateStage === 'inspection-report' && (
-                <div className="cvf-inspection">
-                  <div className="doc-upload-box readonly filled">
-                    <span className="doc-upload-icon"><DocumentIcon /></span>
-                    <div className="cvf-report-file">
-                      <span className="doc-upload-text">{`Vehicle_Inspection_Report_${vinFor(request)}.pdf`}</span>
-                      <span className="cvf-report-file-meta">
-                        Submitted by {request.dealer} on {addDays(request.dateRequested, 2).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="cvf-report-toggle"
-                    onClick={() => setShowInspectionReport((v) => !v)}
-                  >
-                    {showInspectionReport ? 'Hide report summary' : 'View report summary'}
-                  </button>
-                  {showInspectionReport && (
-                    <ul className="cvf-checklist">
-                      {inspectionChecklist.map((item) => (
-                        <li key={item.id}>
-                          <span>{item.label}</span>
-                          <span className="cvf-checklist-result">{item.result}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="vf-req-btn-row">
-                    <button className="vf-req-btn-secondary" onClick={() => onUpdateRequest(request.id, { corporateStage: 'inspection-rejected' })}>
-                      Reject &amp; Choose Another Vehicle
-                    </button>
-                    <button className="vf-req-btn-primary" onClick={() => onUpdateRequest(request.id, { corporateStage: 'offer-letter' })}>
-                      Accept Inspection Report
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {request.corporateStage === 'inspection-rejected' && (
-                <div className="cvf-rejected">
-                  <p>
-                    Your vehicle inspection was not accepted, so this request cannot proceed. Please submit a new
-                    request for a different vehicle from the Vendor Marketplace.
-                  </p>
-                  <button
-                    className="vf-req-btn-primary"
-                    onClick={() => {
-                      setShowProcessModal(false);
-                      onBack();
-                    }}
-                  >
-                    Back to Requests
-                  </button>
-                </div>
-              )}
-
-              {request.corporateStage === 'offer-letter' && (
-                <div className="cvf-offer">
-                  <div className="cvf-quotation-row cvf-quotation-total">
-                    <span>Total Payable</span>
-                    <strong>{formatNaira(totalPayable)}</strong>
-                  </div>
-                  <p className="vf-req-hint">
-                    Review the Repayment Information above alongside the insurance premium and processing fee before
-                    accepting.
-                  </p>
-                  <button className="vf-req-btn-primary" onClick={() => onUpdateRequest(request.id, { corporateStage: 'pin' })}>
-                    Accept Offer Letter
-                  </button>
-                </div>
-              )}
-
-              {request.corporateStage === 'pin' && (
-                <form
-                  className="cvf-pin-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    onUpdateRequest(request.id, { corporateStage: 'processing' });
-                  }}
-                >
-                  <p className="cvf-pin-text">Enter your 4-digit token to digitally sign the Offer Letter.</p>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={4}
-                    className="cvf-pin-input"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="••••"
-                    required
-                  />
-                  <button type="submit" className="vf-req-btn-primary" disabled={pin.length !== 4}>Confirm &amp; Sign</button>
-                </form>
-              )}
-
-              {request.corporateStage === 'processing' && (
-                <div className="bnpl-fetching">
-                  <div className="bnpl-spinner" />
-                  <h3>Processing equity, insurance &amp; fees</h3>
-                </div>
-              )}
-
-              {request.corporateStage === 'delivery-code' && (
-                <div className="cvf-delivery">
-                  <p className="cvf-delivery-label">Delivery Code</p>
-                  <div className="cvf-delivery-code">{request.deliveryCode}</div>
-                  <p className="cvf-delivery-hint">
-                    Share this code with the vendor when you collect the vehicle, or when it is delivered to you. The
-                    vendor will validate this code to release the vehicle.
-                  </p>
-                  <button
-                    className="vf-req-btn-primary"
-                    onClick={() => {
-                      onUpdateRequest(request.id, { corporateStage: 'completed', status: 'approved' });
-                      setShowProcessModal(false);
-                      setShowCompletedModal(true);
-                    }}
-                  >
-                    Vehicle Collected / Delivered
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showCompletedModal && (
-        <div className="modal-overlay" onClick={() => setShowCompletedModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-icon success">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <h3>Financing Completed</h3>
-            <p>
-              The vendor has validated your delivery code and submitted the original vehicle documents to the Bank.
-              Your insurance certificate has been sent to your registered email. This financing request is now
-              complete.
-            </p>
-            <button className="modal-button" onClick={() => setShowCompletedModal(false)}>Done</button>
-          </div>
-        </div>
-      )}
-
-      {showDecisionModal && !decisionReady && (
-        <div className="modal-overlay" onClick={() => setShowDecisionModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="bnpl-fetching">
-              <div className="bnpl-spinner" />
-              <h3>Reviewing your request</h3>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDecisionModal && decisionReady && (
-        <div className="modal-overlay" onClick={() => setShowDecisionModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-icon success">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <h3>Request Approved</h3>
-            <p>
-              Congratulations! Your vehicle finance request for the {request.make} {request.model} has been approved.
-              You can now proceed to schedule your vehicle collection.
-            </p>
-            <button className="modal-button" onClick={() => setShowDecisionModal(false)}>Done</button>
           </div>
         </div>
       )}

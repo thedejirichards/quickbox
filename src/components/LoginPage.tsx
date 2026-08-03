@@ -34,11 +34,7 @@ interface DemoAccount {
 
 const DEMO_ACCOUNTS = {
   individualSuccess: { email: 'solomon@gmail.com', password: 'Password123', displayName: 'Solomon', accountType: 'individual', verificationComplete: true },
-  individualKycComplete: { email: 'james@gmail.com', password: 'Password123', displayName: 'James Okafor', accountType: 'individual', verificationComplete: true },
-  individualKycIncomplete: { email: 'amaka@gmail.com', password: 'Password123', displayName: 'Amaka Chukwu', accountType: 'individual', verificationComplete: false },
   businessSuccess: { email: 'corporate@gmail.com', password: 'Password123', displayName: 'Acme Ventures Ltd', accountType: 'business', verificationComplete: false },
-  businessKybComplete: { email: 'globex@gmail.com', password: 'Password123', displayName: 'Globex Industries Ltd', accountType: 'business', verificationComplete: true },
-  businessKybIncomplete: { email: 'initech@gmail.com', password: 'Password123', displayName: 'Initech Nigeria Ltd', accountType: 'business', verificationComplete: false },
 } satisfies Record<string, DemoAccount>;
 
 type DemoAccountKey = keyof typeof DEMO_ACCOUNTS;
@@ -279,12 +275,6 @@ export default function LoginPage() {
                   <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualSuccess', 'failure')}>
                     Failure
                   </button>
-                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualKycComplete')}>
-                    Employment Details Completed
-                  </button>
-                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('individualKycIncomplete')}>
-                    Employment Details Not Completed
-                  </button>
                 </div>
 
                 <span className="demo-credentials-label">Demo quick-fill &middot; Business</span>
@@ -294,12 +284,6 @@ export default function LoginPage() {
                   </button>
                   <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('businessSuccess', 'failure')}>
                     Failure
-                  </button>
-                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('businessKybComplete')}>
-                    KYB Completed
-                  </button>
-                  <button type="button" className="demo-credentials-btn" onClick={() => fillDemoCredentials('businessKybIncomplete')}>
-                    KYB Not Completed
                   </button>
                 </div>
               </div>

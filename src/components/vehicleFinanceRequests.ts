@@ -66,5 +66,6 @@ export const sampleVehicleFinanceRequests: VehicleFinanceRequest[] = [
     color: 'Black',
     location: 'Oyo State, Ibadan',
     mileage: 147766,
+    corporateStage: 'completed',
   },
 ];

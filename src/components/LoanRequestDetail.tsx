@@ -3,12 +3,10 @@ import './BnplModal.css';
 import './CorporateVehicleFinanceModal.css';
 import OfferLetterSection from './OfferLetterPage';
 import { InspectionSection, PinSigningSection, ProcessingSection, CompletedSection } from './CorporateStageSections';
-import { IndividualInspectionSection, DecisionSection } from './IndividualStageSections';
 import type { CorporateFinanceStage, VehicleFinanceRequest } from './vehicleFinanceRequests';
 
 interface LoanRequestDetailProps {
   request: VehicleFinanceRequest;
-  accountType: 'individual' | 'business';
   displayName: string;
   onBack: () => void;
   onUpdateRequest: (id: string, updates: Partial<VehicleFinanceRequest>) => void;
@@ -22,8 +20,6 @@ const INSURANCE_RATE = 0.03;
 const PROCESSING_FEE = 50_000;
 const INSPECTION_DELAY_MS = 1800;
 const PROCESSING_DELAY_MS = 1600;
-const REPORT_READY_DELAY_MS = 7000;
-const DECISION_DELAY_MS = 1800;
 
 const CORPORATE_STAGE_ORDER: CorporateFinanceStage[] = [
   'inspection-schedule',
@@ -60,7 +56,7 @@ interface JourneyStep {
   label: string;
 }
 
-const BUSINESS_JOURNEY_STEPS: JourneyStep[] = [
+const JOURNEY_STEPS: JourneyStep[] = [
   { key: 'requested', label: 'Requested' },
   { key: 'inspection', label: 'Inspection' },
   { key: 'offer', label: 'Offer & Signing' },
@@ -68,14 +64,7 @@ const BUSINESS_JOURNEY_STEPS: JourneyStep[] = [
   { key: 'completed', label: 'Completed' },
 ];
 
-const INDIVIDUAL_JOURNEY_STEPS: JourneyStep[] = [
-  { key: 'requested', label: 'Requested' },
-  { key: 'inspection', label: 'Inspection' },
-  { key: 'review', label: 'Review' },
-  { key: 'decision', label: 'Decision' },
-];
-
-function businessJourneyIndex(stage?: CorporateFinanceStage) {
+function journeyIndex(stage?: CorporateFinanceStage) {
   switch (stage) {
     case 'inspection-pending':
     case 'inspection-report':
@@ -92,13 +81,6 @@ function businessJourneyIndex(stage?: CorporateFinanceStage) {
     default:
       return 0;
   }
-}
-
-function individualJourneyIndex(request: VehicleFinanceRequest) {
-  if (request.status !== 'pending') return 3;
-  if (request.inspectionReviewed) return 2;
-  if (request.inspectionDate) return 1;
-  return 0;
 }
 
 interface JourneyProgressProps {
@@ -257,11 +239,10 @@ interface RepaymentCardProps {
   eligibleAmount: number;
   loanAmount: number;
   monthlyRepayment: number;
-  isBusinessFlow: boolean;
   insurancePremium: number;
 }
 
-function RepaymentCard({ eligibleAmount, loanAmount, monthlyRepayment, isBusinessFlow, insurancePremium }: RepaymentCardProps) {
+function RepaymentCard({ eligibleAmount, loanAmount, monthlyRepayment, insurancePremium }: RepaymentCardProps) {
   return (
     <div className="vf-req-info-card">
       <h3 className="vf-req-info-title">Repayment Information</h3>
@@ -282,18 +263,14 @@ function RepaymentCard({ eligibleAmount, loanAmount, monthlyRepayment, isBusines
           <span>Estimated Monthly Repayment</span>
           <strong>{formatNaira(monthlyRepayment)}</strong>
         </div>
-        {isBusinessFlow && (
-          <>
-            <div className="vf-req-amount-row">
-              <span>Insurance Premium</span>
-              <strong>{formatNaira(insurancePremium)}</strong>
-            </div>
-            <div className="vf-req-amount-row">
-              <span>Processing Fee</span>
-              <strong>{formatNaira(PROCESSING_FEE)}</strong>
-            </div>
-          </>
-        )}
+        <div className="vf-req-amount-row">
+          <span>Insurance Premium</span>
+          <strong>{formatNaira(insurancePremium)}</strong>
+        </div>
+        <div className="vf-req-amount-row">
+          <span>Processing Fee</span>
+          <strong>{formatNaira(PROCESSING_FEE)}</strong>
+        </div>
       </div>
     </div>
   );
@@ -302,10 +279,9 @@ function RepaymentCard({ eligibleAmount, loanAmount, monthlyRepayment, isBusines
 interface EquityCardProps {
   minEquity: number;
   equityFunded: boolean;
-  isBusinessFlow: boolean;
 }
 
-function EquityCard({ minEquity, equityFunded, isBusinessFlow }: EquityCardProps) {
+function EquityCard({ minEquity, equityFunded }: EquityCardProps) {
   return (
     <div className="vf-req-info-card">
       <div className="vf-req-info-title-row">
@@ -322,44 +298,18 @@ function EquityCard({ minEquity, equityFunded, isBusinessFlow }: EquityCardProps
       <p className="vf-req-hint">
         {equityFunded
           ? 'Your equity contribution has been received.'
-          : isBusinessFlow
-            ? 'This will be processed automatically once you accept the Offer Letter and confirm with your PIN.'
-            : 'Fund your account with this amount to keep your request moving.'}
+          : 'This will be processed automatically once you accept the Offer Letter and confirm with your PIN.'}
       </p>
     </div>
   );
 }
 
-export default function LoanRequestDetail({ request, accountType, displayName, onBack, onUpdateRequest }: LoanRequestDetailProps) {
-  const isBusinessFlow = accountType === 'business' && Boolean(request.corporateStage);
-
+export default function LoanRequestDetail({ request, displayName, onBack, onUpdateRequest }: LoanRequestDetailProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [inspectionDate, setInspectionDate] = useState(request.inspectionDate ?? '');
   const [inspectionTime, setInspectionTime] = useState(request.inspectionTime ?? '');
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [scheduleModalStep, setScheduleModalStep] = useState<ScheduleModalStep>('form');
-  const [reportReady, setReportReady] = useState(false);
-  const [showDecisionModal, setShowDecisionModal] = useState(false);
-  const [decisionReady, setDecisionReady] = useState(false);
-
-  const inspectionScheduled = Boolean(request.inspectionDate);
-  const inspectionReviewed = Boolean(request.inspectionReviewed);
-
-  useEffect(() => {
-    if (isBusinessFlow || !inspectionScheduled || inspectionReviewed) return;
-    setReportReady(false);
-    const timer = setTimeout(() => setReportReady(true), REPORT_READY_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [isBusinessFlow, inspectionScheduled, inspectionReviewed]);
-
-  useEffect(() => {
-    if (!showDecisionModal || decisionReady) return;
-    const timer = setTimeout(() => {
-      onUpdateRequest(request.id, { status: 'approved' });
-      setDecisionReady(true);
-    }, DECISION_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [showDecisionModal, decisionReady, request.id, onUpdateRequest]);
 
   useEffect(() => {
     if (request.corporateStage !== 'inspection-pending') return;
@@ -387,15 +337,7 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
   const insurancePremium = Math.round(priceValue * INSURANCE_RATE);
   const totalPayable = loanAmount + totalInterest + insurancePremium + PROCESSING_FEE;
 
-  const equityFunded = isBusinessFlow
-    ? stageIndex(request.corporateStage) >= stageIndex('processing')
-    : request.status === 'approved';
-  const inspectionDone = isBusinessFlow
-    ? stageIndex(request.corporateStage) >= stageIndex('offer-letter')
-    : inspectionReviewed || request.status === 'approved';
-  const reviewComplete = isBusinessFlow
-    ? request.corporateStage === 'completed'
-    : request.status !== 'pending';
+  const equityFunded = stageIndex(request.corporateStage) >= stageIndex('processing');
 
   const carDetails = [
     { label: 'Car Make', value: request.make },
@@ -410,41 +352,13 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
 
   const vehicleCount = request.quantity && request.quantity > 1 ? request.quantity : 1;
 
-  const customerActions = [
-    { id: 'equity', label: `Fund your account with the equity contribution of ${formatNaira(minEquity)}`, done: equityFunded },
-    {
-      id: 'inspection',
-      label: inspectionReviewed
-        ? 'Vehicle inspection report reviewed'
-        : inspectionScheduled
-          ? `Review your inspection report (scheduled for ${new Date(request.inspectionDate!).toLocaleDateString()}, ${timeSlotLabels[request.inspectionTime!] ?? request.inspectionTime})`
-          : 'Complete the mandatory vehicle inspection',
-      done: inspectionDone,
-    },
-    { id: 'review', label: 'Awaiting final review and approval from Access Bank', done: reviewComplete },
-  ];
-
   const notifications = [
     {
       id: 'received',
       text: `Your vehicle finance request for ${request.make} ${request.model} has been received and is under review.`,
       date: new Date(request.dateRequested),
     },
-    isBusinessFlow
-      ? { id: 'stage', text: corporateStageMessage(request), date: addDays(request.dateRequested, 1) }
-      : request.status === 'pending'
-        ? {
-            id: 'in-review',
-            text: 'Your documents are being reviewed by our credit team. This typically takes 2-3 business days.',
-            date: addDays(request.dateRequested, 1),
-          }
-        : {
-            id: 'decision',
-            text: request.status === 'approved'
-              ? 'Your request has been approved. You can now proceed to schedule your vehicle collection.'
-              : 'Your request was not approved. Please contact support for more information.',
-            date: addDays(request.dateRequested, 2),
-          },
+    { id: 'stage', text: corporateStageMessage(request), date: addDays(request.dateRequested, 1) },
   ];
 
   const scheduleSummary = `${inspectionDate ? new Date(inspectionDate).toLocaleDateString() : ''} between ${timeSlotLabels[inspectionTime] ?? inspectionTime}`;
@@ -474,12 +388,12 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
       <p className="vf-req-subtitle">Your Car Details by {request.dealer}</p>
 
       <JourneyProgress
-        steps={isBusinessFlow ? BUSINESS_JOURNEY_STEPS : INDIVIDUAL_JOURNEY_STEPS}
-        currentIndex={isBusinessFlow ? businessJourneyIndex(request.corporateStage) : individualJourneyIndex(request)}
-        hasError={isBusinessFlow ? request.corporateStage === 'inspection-rejected' : request.status === 'declined'}
+        steps={JOURNEY_STEPS}
+        currentIndex={journeyIndex(request.corporateStage)}
+        hasError={request.corporateStage === 'inspection-rejected'}
       />
 
-      {(isBusinessFlow ? request.corporateStage === 'inspection-schedule' : request.status === 'pending' && !inspectionScheduled) ? (
+      {!request.corporateStage || request.corporateStage === 'inspection-schedule' ? (
         <div className="vf-req-grid">
           <div className="vf-req-main">
             {Array.from({ length: vehicleCount }, (_, i) => (
@@ -496,10 +410,9 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
               eligibleAmount={eligibleAmount}
               loanAmount={loanAmount}
               monthlyRepayment={monthlyRepayment}
-              isBusinessFlow={isBusinessFlow}
               insurancePremium={insurancePremium}
             />
-            <EquityCard minEquity={minEquity} equityFunded={equityFunded} isBusinessFlow={isBusinessFlow} />
+            <EquityCard minEquity={minEquity} equityFunded={equityFunded} />
 
             <div className="vf-req-info-card">
               <h3 className="vf-req-info-title">Next Step</h3>
@@ -514,23 +427,9 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
                 Schedule Inspection
               </button>
             </div>
-
-            {!isBusinessFlow && (
-              <div className="vf-req-info-card">
-                <h3 className="vf-req-info-title">Pending Customer Actions</h3>
-                <ul className="vf-req-actions-list">
-                  {customerActions.map((action) => (
-                    <li key={action.id} className={`vf-req-action-item ${action.done ? 'done' : ''}`}>
-                      <span className="vf-req-action-icon">{action.done ? <CheckIcon /> : <ClockIcon />}</span>
-                      {action.label}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </div>
-      ) : isBusinessFlow && (request.corporateStage === 'inspection-pending' || request.corporateStage === 'inspection-report' || request.corporateStage === 'inspection-rejected') ? (
+      ) : request.corporateStage === 'inspection-pending' || request.corporateStage === 'inspection-report' || request.corporateStage === 'inspection-rejected' ? (
         <InspectionSection
           subStage={request.corporateStage}
           dealer={request.dealer}
@@ -541,7 +440,7 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
           onAccept={() => onUpdateRequest(request.id, { corporateStage: 'offer-letter' })}
           onBackToRequests={onBack}
         />
-      ) : isBusinessFlow && request.corporateStage === 'offer-letter' ? (
+      ) : request.corporateStage === 'offer-letter' ? (
         <OfferLetterSection
           fileName={`Offer_Letter_${vinFor(request)}.pdf`}
           dealer={request.dealer}
@@ -549,37 +448,16 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
           totalPayableLabel={formatNaira(totalPayable)}
           onAccept={() => onUpdateRequest(request.id, { corporateStage: 'pin' })}
         />
-      ) : isBusinessFlow && request.corporateStage === 'pin' ? (
+      ) : request.corporateStage === 'pin' ? (
         <PinSigningSection onSubmit={() => onUpdateRequest(request.id, { corporateStage: 'processing' })} />
-      ) : isBusinessFlow && (request.corporateStage === 'processing' || request.corporateStage === 'delivery-code') ? (
+      ) : request.corporateStage === 'processing' || request.corporateStage === 'delivery-code' ? (
         <ProcessingSection
           subStage={request.corporateStage}
           deliveryCode={request.deliveryCode}
           onVehicleCollected={() => onUpdateRequest(request.id, { corporateStage: 'completed', status: 'approved' })}
         />
-      ) : isBusinessFlow && request.corporateStage === 'completed' ? (
+      ) : request.corporateStage === 'completed' ? (
         <CompletedSection />
-      ) : !isBusinessFlow && inspectionScheduled && !inspectionReviewed ? (
-        <IndividualInspectionSection
-          reportReady={reportReady}
-          dealer={request.dealer}
-          fileName={`Vehicle_Inspection_Report_${vinFor(request)}.pdf`}
-          dateLabel={inspectionDate ? new Date(inspectionDate).toLocaleDateString() : addDays(request.dateRequested, 2).toLocaleDateString()}
-          checklist={inspectionChecklist}
-          onAcknowledge={() => onUpdateRequest(request.id, { inspectionReviewed: true })}
-        />
-      ) : !isBusinessFlow ? (
-        <DecisionSection
-          status={request.status}
-          make={request.make}
-          model={request.model}
-          decisionRequested={showDecisionModal}
-          decisionReady={decisionReady}
-          onViewDecision={() => {
-            setDecisionReady(false);
-            setShowDecisionModal(true);
-          }}
-        />
       ) : null}
 
       {scheduleModalOpen && scheduleModalStep === 'form' && (
@@ -634,7 +512,7 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
               className="modal-button"
               onClick={() => {
                 onUpdateRequest(request.id, {
-                  ...(isBusinessFlow ? { corporateStage: 'inspection-pending' as const } : {}),
+                  corporateStage: 'inspection-pending',
                   inspectionDate,
                   inspectionTime,
                 });

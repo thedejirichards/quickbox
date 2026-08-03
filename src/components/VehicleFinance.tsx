@@ -144,7 +144,6 @@ export default function VehicleFinance({ accountType, displayName, onInitiateReq
       <div className="vf-page">
         <LoanRequestDetail
           request={viewingRequest}
-          accountType={accountType}
           displayName={displayName}
           onBack={() => setViewingRequestId(null)}
           onUpdateRequest={onUpdateRequest}

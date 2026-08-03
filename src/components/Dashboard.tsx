@@ -142,6 +142,7 @@ export default function Dashboard({ accountType, displayName, verificationComple
       color: car.color,
       location: car.location,
       mileage: car.mileage,
+      corporateStage: 'inspection-schedule',
     };
     setVehicleFinanceRequests((prev) => [request, ...prev]);
     setVfInitialTab('pending');

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import PersonalDocumentationModal, { type DocumentationData } from './PersonalDocumentationModal';
 import BusinessDocumentationModal, { type BusinessDocumentationData } from './BusinessDocumentationModal';
-import type { VehicleFinanceRequest } from './vehicleFinanceRequests';
+import type { RequestedCar, VehicleFinanceRequest } from './vehicleFinanceRequests';
 import LoanRequestDetail from './LoanRequestDetail';
 
 interface VehicleFinanceProps {
@@ -11,6 +11,7 @@ interface VehicleFinanceProps {
   requests: VehicleFinanceRequest[];
   initialTab?: 'new' | 'pending' | 'approved';
   onUpdateRequest: (id: string, updates: Partial<VehicleFinanceRequest>) => void;
+  onUpdateCar: (requestId: string, carId: string, updates: Partial<RequestedCar>) => void;
 }
 
 type DocStatus = 'not-submitted' | 'pending' | 'approved';
@@ -120,7 +121,7 @@ function RequestsTable({ title, requests, emptyMessage, onView }: RequestsTableP
   );
 }
 
-export default function VehicleFinance({ accountType, displayName, onInitiateRequest, requests, initialTab = 'new', onUpdateRequest }: VehicleFinanceProps) {
+export default function VehicleFinance({ accountType, displayName, onInitiateRequest, requests, initialTab = 'new', onUpdateRequest, onUpdateCar }: VehicleFinanceProps) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [viewingRequestId, setViewingRequestId] = useState<string | null>(null);
   const viewingRequest = requests.find((r) => r.id === viewingRequestId) ?? null;
@@ -144,9 +145,11 @@ export default function VehicleFinance({ accountType, displayName, onInitiateReq
       <div className="vf-page">
         <LoanRequestDetail
           request={viewingRequest}
+          accountType={accountType}
           displayName={displayName}
           onBack={() => setViewingRequestId(null)}
           onUpdateRequest={onUpdateRequest}
+          onUpdateCar={onUpdateCar}
         />
       </div>
     );

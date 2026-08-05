@@ -3,13 +3,15 @@ import './BnplModal.css';
 import './CorporateVehicleFinanceModal.css';
 import OfferLetterSection from './OfferLetterPage';
 import { InspectionSection, PinSigningSection, ProcessingSection, CompletedSection } from './CorporateStageSections';
-import type { CorporateFinanceStage, VehicleFinanceRequest } from './vehicleFinanceRequests';
+import type { CorporateFinanceStage, RequestedCar, VehicleFinanceRequest } from './vehicleFinanceRequests';
 
 interface LoanRequestDetailProps {
   request: VehicleFinanceRequest;
+  accountType: 'individual' | 'business';
   displayName: string;
   onBack: () => void;
   onUpdateRequest: (id: string, updates: Partial<VehicleFinanceRequest>) => void;
+  onUpdateCar: (requestId: string, carId: string, updates: Partial<RequestedCar>) => void;
 }
 
 type ScheduleModalStep = 'form' | 'confirm' | 'success';
@@ -131,7 +133,7 @@ function gradeFor(mileage: number) {
   return 'C';
 }
 
-function vinFor(request: VehicleFinanceRequest) {
+function vinFor(request: RequestedCar) {
   const prefix = `${request.make}${request.model}`.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase().padEnd(4, 'X');
   return `${prefix}${'*'.repeat(11)}`;
 }
@@ -142,7 +144,7 @@ function addDays(dateStr: string, days: number) {
   return d;
 }
 
-function corporateStageMessage(request: VehicleFinanceRequest) {
+function corporateStageMessage(request: RequestedCar) {
   switch (request.corporateStage) {
     case 'inspection-schedule':
       return 'Your vendor quotation has been confirmed. Please schedule a vehicle inspection to proceed.';
@@ -304,31 +306,56 @@ function EquityCard({ minEquity, equityFunded }: EquityCardProps) {
   );
 }
 
-export default function LoanRequestDetail({ request, displayName, onBack, onUpdateRequest }: LoanRequestDetailProps) {
+export default function LoanRequestDetail({ request, accountType, displayName, onBack, onUpdateRequest, onUpdateCar }: LoanRequestDetailProps) {
+  const isFleetView = accountType === 'business';
+  // Fall back to the request itself as a single car if it predates per-car tracking.
+  const hasCars = Boolean(request.cars && request.cars.length > 0);
+  const cars = hasCars ? request.cars! : [request];
+  const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
+  const selectedCar = cars.find((c) => c.id === selectedCarId) ?? null;
+  const active: RequestedCar = isFleetView && selectedCar ? selectedCar : request;
+  const showVehicleTable = isFleetView && !selectedCar;
+
+  const updateActive = (updates: Partial<RequestedCar>) => {
+    if (isFleetView && selectedCarId && hasCars) {
+      onUpdateCar(request.id, selectedCarId, updates);
+    } else {
+      onUpdateRequest(request.id, updates);
+    }
+  };
+
   const [showNotifications, setShowNotifications] = useState(false);
-  const [inspectionDate, setInspectionDate] = useState(request.inspectionDate ?? '');
-  const [inspectionTime, setInspectionTime] = useState(request.inspectionTime ?? '');
+  const [inspectionDate, setInspectionDate] = useState(active.inspectionDate ?? '');
+  const [inspectionTime, setInspectionTime] = useState(active.inspectionTime ?? '');
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [scheduleModalStep, setScheduleModalStep] = useState<ScheduleModalStep>('form');
 
   useEffect(() => {
-    if (request.corporateStage !== 'inspection-pending') return;
-    const timer = setTimeout(() => {
-      onUpdateRequest(request.id, { corporateStage: 'inspection-report' });
-    }, INSPECTION_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [request.corporateStage, request.id, onUpdateRequest]);
+    setInspectionDate(active.inspectionDate ?? '');
+    setInspectionTime(active.inspectionTime ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.id]);
 
   useEffect(() => {
-    if (request.corporateStage !== 'processing') return;
+    if (active.corporateStage !== 'inspection-pending') return;
+    const timer = setTimeout(() => {
+      updateActive({ corporateStage: 'inspection-report' });
+    }, INSPECTION_DELAY_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.corporateStage, active.id]);
+
+  useEffect(() => {
+    if (active.corporateStage !== 'processing') return;
     const timer = setTimeout(() => {
       const code = `DEL-${Math.floor(100000 + Math.random() * 900000)}`;
-      onUpdateRequest(request.id, { corporateStage: 'delivery-code', deliveryCode: code });
+      updateActive({ corporateStage: 'delivery-code', deliveryCode: code });
     }, PROCESSING_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [request.corporateStage, request.id, onUpdateRequest]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.corporateStage, active.id]);
 
-  const priceValue = parsePrice(request.price);
+  const priceValue = parsePrice(active.price);
   const eligibleAmount = Math.max(5_000_000, Math.ceil(priceValue / 500_000) * 500_000);
   const minEquity = Math.max(500_000, Math.round((priceValue * 0.1) / 50_000) * 50_000);
   const loanAmount = Math.max(priceValue - minEquity, 0);
@@ -337,35 +364,36 @@ export default function LoanRequestDetail({ request, displayName, onBack, onUpda
   const insurancePremium = Math.round(priceValue * INSURANCE_RATE);
   const totalPayable = loanAmount + totalInterest + insurancePremium + PROCESSING_FEE;
 
-  const equityFunded = stageIndex(request.corporateStage) >= stageIndex('processing');
+  const equityFunded = stageIndex(active.corporateStage) >= stageIndex('processing');
 
   const carDetails = [
-    { label: 'Car Make', value: request.make },
-    { label: 'Car Type', value: `${request.make} ${request.model}` },
+    { label: 'Car Make', value: active.make },
+    { label: 'Car Type', value: `${active.make} ${active.model}` },
     { label: 'Car Condition', value: 'Pre - owned' },
-    { label: 'Year of Manufacture', value: `${request.year}` },
-    { label: 'Car Color', value: request.color },
-    { label: 'Car Rating/Grade', value: gradeFor(request.mileage) },
-    { label: 'VIN /Chasis number', value: vinFor(request) },
-    { label: 'Car location(State)', value: parseState(request.location) },
+    { label: 'Year of Manufacture', value: `${active.year}` },
+    { label: 'Car Color', value: active.color },
+    { label: 'Car Rating/Grade', value: gradeFor(active.mileage) },
+    { label: 'VIN /Chasis number', value: vinFor(active) },
+    { label: 'Car location(State)', value: parseState(active.location) },
   ];
-
-  const vehicleCount = request.quantity && request.quantity > 1 ? request.quantity : 1;
 
   const notifications = [
     {
       id: 'received',
-      text: `Your vehicle finance request for ${request.make} ${request.model} has been received and is under review.`,
-      date: new Date(request.dateRequested),
+      text: `Your vehicle finance request for ${active.make} ${active.model} has been received and is under review.`,
+      date: new Date(active.dateRequested),
     },
-    { id: 'stage', text: corporateStageMessage(request), date: addDays(request.dateRequested, 1) },
+    { id: 'stage', text: corporateStageMessage(active), date: addDays(active.dateRequested, 1) },
   ];
 
   const scheduleSummary = `${inspectionDate ? new Date(inspectionDate).toLocaleDateString() : ''} between ${timeSlotLabels[inspectionTime] ?? inspectionTime}`;
 
   return (
     <div className="vf-req">
-      <button className="vf-req-back" onClick={onBack}>
+      <button
+        className="vf-req-back"
+        onClick={isFleetView && selectedCarId ? () => setSelectedCarId(null) : onBack}
+      >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="15 18 9 12 15 6" />
         </svg>
@@ -373,92 +401,130 @@ export default function LoanRequestDetail({ request, displayName, onBack, onUpda
       </button>
 
       <div className="vf-req-title-row">
-        <h1>{request.make} {request.model} - {request.year}</h1>
-        <span className={`vf-status-badge ${request.status}`}>
-          {request.status === 'approved' ? <CheckIcon /> : <ClockIcon />}
-          {request.status === 'approved' ? 'Approved' : request.status === 'declined' ? 'Declined' : 'Pending'}
+        <h1>{active.make} {active.model} - {active.year}</h1>
+        <span className={`vf-status-badge ${active.status}`}>
+          {active.status === 'approved' ? <CheckIcon /> : <ClockIcon />}
+          {active.status === 'approved' ? 'Approved' : active.status === 'declined' ? 'Declined' : 'Pending'}
         </span>
-        <button className="vf-req-notif-btn" onClick={() => setShowNotifications(true)}>
-          <BellIcon />
-          Request Notification
-        </button>
+        {!showVehicleTable && (
+          <button className="vf-req-notif-btn" onClick={() => setShowNotifications(true)}>
+            <BellIcon />
+            Request Notification
+          </button>
+        )}
       </div>
 
       <p className="vf-req-greeting">Hello {displayName},</p>
-      <p className="vf-req-subtitle">Your Car Details by {request.dealer}</p>
+      <p className="vf-req-subtitle">Your Car Details by {active.dealer}</p>
 
-      <JourneyProgress
-        steps={JOURNEY_STEPS}
-        currentIndex={journeyIndex(request.corporateStage)}
-        hasError={request.corporateStage === 'inspection-rejected'}
-      />
-
-      {!request.corporateStage || request.corporateStage === 'inspection-schedule' ? (
-        <div className="vf-req-grid">
-          <div className="vf-req-main">
-            {Array.from({ length: vehicleCount }, (_, i) => (
-              <VehicleInfoCard
-                key={i}
-                title={vehicleCount > 1 ? `Vehicle ${i + 1} Information` : 'Vehicle Information'}
-                carDetails={carDetails}
-              />
-            ))}
-          </div>
-
-          <div className="vf-req-side">
-            <RepaymentCard
-              eligibleAmount={eligibleAmount}
-              loanAmount={loanAmount}
-              monthlyRepayment={monthlyRepayment}
-              insurancePremium={insurancePremium}
-            />
-            <EquityCard minEquity={minEquity} equityFunded={equityFunded} />
-
-            <div className="vf-req-info-card">
-              <h3 className="vf-req-info-title">Next Step</h3>
-              <p className="vf-req-hint">Schedule your vehicle inspection to move this request forward.</p>
-              <button
-                className="vf-req-btn-primary"
-                onClick={() => {
-                  setScheduleModalStep('form');
-                  setScheduleModalOpen(true);
-                }}
-              >
-                Schedule Inspection
-              </button>
-            </div>
+      {showVehicleTable ? (
+        <div className="vf-req-info-card">
+          <h3 className="vf-req-info-title">Requested Vehicles</h3>
+          <div className="vf-requests-table-wrap">
+            <table className="vf-requests-table">
+              <thead>
+                <tr>
+                  <th>S/N</th>
+                  <th>Car ID</th>
+                  <th>Car model</th>
+                  <th>Vendor</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cars.map((car, i) => (
+                  <tr key={car.id}>
+                    <td>{i + 1}</td>
+                    <td><span className="vf-request-id">{car.id}</span></td>
+                    <td>{car.make} {car.model}</td>
+                    <td>{car.dealer}</td>
+                    <td>
+                      <span className={`vf-status-badge ${car.corporateStage === 'completed' ? 'approved' : 'pending'}`}>
+                        {JOURNEY_STEPS[journeyIndex(car.corporateStage)].label}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="vf-car-view-btn" onClick={() => setSelectedCarId(car.id)}>
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      ) : request.corporateStage === 'inspection-pending' || request.corporateStage === 'inspection-report' || request.corporateStage === 'inspection-rejected' ? (
-        <InspectionSection
-          subStage={request.corporateStage}
-          dealer={request.dealer}
-          fileName={`Vehicle_Inspection_Report_${vinFor(request)}.pdf`}
-          dateLabel={addDays(request.dateRequested, 2).toLocaleDateString()}
-          checklist={inspectionChecklist}
-          onReject={() => onUpdateRequest(request.id, { corporateStage: 'inspection-rejected' })}
-          onAccept={() => onUpdateRequest(request.id, { corporateStage: 'offer-letter' })}
-          onBackToRequests={onBack}
-        />
-      ) : request.corporateStage === 'offer-letter' ? (
-        <OfferLetterSection
-          fileName={`Offer_Letter_${vinFor(request)}.pdf`}
-          dealer={request.dealer}
-          dateLabel={addDays(request.dateRequested, 3).toLocaleDateString()}
-          totalPayableLabel={formatNaira(totalPayable)}
-          onAccept={() => onUpdateRequest(request.id, { corporateStage: 'pin' })}
-        />
-      ) : request.corporateStage === 'pin' ? (
-        <PinSigningSection onSubmit={() => onUpdateRequest(request.id, { corporateStage: 'processing' })} />
-      ) : request.corporateStage === 'processing' || request.corporateStage === 'delivery-code' ? (
-        <ProcessingSection
-          subStage={request.corporateStage}
-          deliveryCode={request.deliveryCode}
-          onVehicleCollected={() => onUpdateRequest(request.id, { corporateStage: 'completed', status: 'approved' })}
-        />
-      ) : request.corporateStage === 'completed' ? (
-        <CompletedSection />
-      ) : null}
+      ) : (
+        <>
+          <JourneyProgress
+            steps={JOURNEY_STEPS}
+            currentIndex={journeyIndex(active.corporateStage)}
+            hasError={active.corporateStage === 'inspection-rejected'}
+          />
+
+          {!active.corporateStage || active.corporateStage === 'inspection-schedule' ? (
+            <div className="vf-req-grid">
+              <div className="vf-req-main">
+                <VehicleInfoCard title="Vehicle Information" carDetails={carDetails} />
+              </div>
+
+              <div className="vf-req-side">
+                <RepaymentCard
+                  eligibleAmount={eligibleAmount}
+                  loanAmount={loanAmount}
+                  monthlyRepayment={monthlyRepayment}
+                  insurancePremium={insurancePremium}
+                />
+                <EquityCard minEquity={minEquity} equityFunded={equityFunded} />
+
+                <div className="vf-req-info-card">
+                  <h3 className="vf-req-info-title">Next Step</h3>
+                  <p className="vf-req-hint">Schedule your vehicle inspection to move this request forward.</p>
+                  <button
+                    className="vf-req-btn-primary vf-req-btn-fit"
+                    onClick={() => {
+                      setScheduleModalStep('form');
+                      setScheduleModalOpen(true);
+                    }}
+                  >
+                    Schedule Inspection
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : active.corporateStage === 'inspection-pending' || active.corporateStage === 'inspection-report' || active.corporateStage === 'inspection-rejected' ? (
+            <InspectionSection
+              subStage={active.corporateStage}
+              dealer={active.dealer}
+              fileName={`Vehicle_Inspection_Report_${vinFor(active)}.pdf`}
+              dateLabel={addDays(active.dateRequested, 2).toLocaleDateString()}
+              checklist={inspectionChecklist}
+              onReject={() => updateActive({ corporateStage: 'inspection-rejected' })}
+              onAccept={() => updateActive({ corporateStage: 'offer-letter' })}
+              onBackToRequests={onBack}
+            />
+          ) : active.corporateStage === 'offer-letter' ? (
+            <OfferLetterSection
+              fileName={`Offer_Letter_${vinFor(active)}.pdf`}
+              dealer={active.dealer}
+              dateLabel={addDays(active.dateRequested, 3).toLocaleDateString()}
+              totalPayableLabel={formatNaira(totalPayable)}
+              onAccept={() => updateActive({ corporateStage: 'pin' })}
+            />
+          ) : active.corporateStage === 'pin' ? (
+            <PinSigningSection onSubmit={() => updateActive({ corporateStage: 'processing' })} />
+          ) : active.corporateStage === 'processing' || active.corporateStage === 'delivery-code' ? (
+            <ProcessingSection
+              subStage={active.corporateStage}
+              deliveryCode={active.deliveryCode}
+              onVehicleCollected={() => updateActive({ corporateStage: 'completed', status: 'approved' })}
+            />
+          ) : active.corporateStage === 'completed' ? (
+            <CompletedSection />
+          ) : null}
+        </>
+      )}
 
       {scheduleModalOpen && scheduleModalStep === 'form' && (
         <div className="modal-overlay" onClick={() => setScheduleModalOpen(false)}>
@@ -468,7 +534,7 @@ export default function LoanRequestDetail({ request, displayName, onBack, onUpda
             </button>
             <h3 className="doc-modal-title">Schedule Vehicle Inspection</h3>
             <p className="doc-modal-subtitle">
-              Choose a convenient date and time for {request.dealer} to inspect your {request.make} {request.model}.
+              Choose a convenient date and time for {active.dealer} to inspect your {active.make} {active.model}.
             </p>
             <form
               className="doc-modal-form"
@@ -511,7 +577,7 @@ export default function LoanRequestDetail({ request, displayName, onBack, onUpda
             <button
               className="modal-button"
               onClick={() => {
-                onUpdateRequest(request.id, {
+                updateActive({
                   corporateStage: 'inspection-pending',
                   inspectionDate,
                   inspectionTime,

@@ -5,7 +5,7 @@ import MyAccount from './MyAccount';
 import VehicleFinance from './VehicleFinance';
 import VendorSite from './VendorSite';
 import type { VendorCar } from './vendorCars';
-import { sampleVehicleFinanceRequests, type VehicleFinanceRequest } from './vehicleFinanceRequests';
+import { buildRequestedCars, sampleVehicleFinanceRequests, type RequestedCar, type VehicleFinanceRequest } from './vehicleFinanceRequests';
 
 interface DashboardProps {
   accountType: 'individual' | 'business';
@@ -128,13 +128,12 @@ export default function Dashboard({ accountType, displayName, verificationComple
   };
 
   const handleBnplComplete = (car: VendorCar) => {
-    const request: VehicleFinanceRequest = {
+    const carBase = {
       id: `${Date.now()}`,
       vehicle: `${car.make} ${car.model} ${car.year} ${car.color}`,
-      image: car.image,
       price: car.price,
       dealer: 'Autochek',
-      status: 'pending',
+      status: 'pending' as const,
       dateRequested: new Date().toISOString(),
       make: car.make,
       model: car.model,
@@ -142,7 +141,12 @@ export default function Dashboard({ accountType, displayName, verificationComple
       color: car.color,
       location: car.location,
       mileage: car.mileage,
-      corporateStage: 'inspection-schedule',
+      corporateStage: 'inspection-schedule' as const,
+    };
+    const request: VehicleFinanceRequest = {
+      ...carBase,
+      image: car.image,
+      cars: buildRequestedCars(carBase, 1),
     };
     setVehicleFinanceRequests((prev) => [request, ...prev]);
     setVfInitialTab('pending');
@@ -153,13 +157,13 @@ export default function Dashboard({ accountType, displayName, verificationComple
   const handleCorporateFinanceComplete = (car: VendorCar, quantity: number) => {
     const unitPrice = Number(car.price.replace(/[^\d]/g, '')) || 0;
     const totalPrice = quantity > 1 ? unitPrice * quantity : unitPrice;
-    const request: VehicleFinanceRequest = {
-      id: `${Date.now()}`,
+    const requestId = `${Date.now()}`;
+    const carBase = {
+      id: requestId,
       vehicle: `${car.make} ${car.model} ${car.year} ${car.color}`,
-      image: car.image,
-      price: quantity > 1 ? `₦${totalPrice.toLocaleString()}` : car.price,
+      price: car.price,
       dealer: 'Autochek',
-      status: 'pending',
+      status: 'pending' as const,
       dateRequested: new Date().toISOString(),
       make: car.make,
       model: car.model,
@@ -167,8 +171,14 @@ export default function Dashboard({ accountType, displayName, verificationComple
       color: car.color,
       location: car.location,
       mileage: car.mileage,
+      corporateStage: 'inspection-schedule' as const,
+    };
+    const request: VehicleFinanceRequest = {
+      ...carBase,
+      image: car.image,
+      price: quantity > 1 ? `₦${totalPrice.toLocaleString()}` : car.price,
       quantity: quantity > 1 ? quantity : undefined,
-      corporateStage: 'inspection-schedule',
+      cars: buildRequestedCars(carBase, quantity),
     };
     setVehicleFinanceRequests((prev) => [request, ...prev]);
     setVfInitialTab('pending');
@@ -178,6 +188,16 @@ export default function Dashboard({ accountType, displayName, verificationComple
 
   const updateVehicleFinanceRequest = useCallback((id: string, updates: Partial<VehicleFinanceRequest>) => {
     setVehicleFinanceRequests((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+  }, []);
+
+  const updateVehicleFinanceCar = useCallback((requestId: string, carId: string, updates: Partial<RequestedCar>) => {
+    setVehicleFinanceRequests((prev) =>
+      prev.map((r) =>
+        r.id === requestId
+          ? { ...r, cars: r.cars?.map((c) => (c.id === carId ? { ...c, ...updates } : c)) }
+          : r
+      )
+    );
   }, []);
 
   if (dashboardStep === 'partners') {
@@ -310,6 +330,7 @@ export default function Dashboard({ accountType, displayName, verificationComple
               requests={vehicleFinanceRequests}
               initialTab={vfInitialTab}
               onUpdateRequest={updateVehicleFinanceRequest}
+              onUpdateCar={updateVehicleFinanceCar}
             />
           )}
 

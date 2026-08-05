@@ -41,23 +41,6 @@ function CheckIcon() {
   );
 }
 
-function CheckIconWhite() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
 function ChevronIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -132,12 +115,10 @@ export function InspectionSection({
             </ul>
           )}
           <div className="vf-req-btn-row">
-            <button className="vf-req-btn-secondary cvf-action-btn reject" onClick={onReject}>
-              <XIcon />
+            <button className="vf-req-btn-secondary cvf-action-btn reject vf-req-btn-fit" onClick={onReject}>
               Reject
             </button>
-            <button className="vf-req-btn-primary cvf-action-btn" onClick={onAccept}>
-              <CheckIconWhite />
+            <button className="vf-req-btn-primary cvf-action-btn vf-req-btn-fit" onClick={onAccept}>
               Accept
             </button>
           </div>
@@ -150,7 +131,7 @@ export function InspectionSection({
             Your vehicle inspection was not accepted, so this request cannot proceed. Please submit a new
             request for a different vehicle from the Vendor Marketplace.
           </p>
-          <button className="vf-req-btn-primary" onClick={onBackToRequests}>
+          <button className="vf-req-btn-primary vf-req-btn-fit" onClick={onBackToRequests}>
             Back to Requests
           </button>
         </div>
@@ -187,7 +168,7 @@ export function PinSigningSection({ onSubmit }: PinSigningSectionProps) {
           placeholder="••••"
           required
         />
-        <button type="submit" className="vf-req-btn-primary" disabled={pin.length !== 4}>Confirm &amp; Sign</button>
+        <button type="submit" className="vf-req-btn-primary vf-req-btn-fit" disabled={pin.length !== 4}>Confirm &amp; Sign</button>
       </form>
     </div>
   );
@@ -219,7 +200,7 @@ export function ProcessingSection({ subStage, deliveryCode, onVehicleCollected }
             Share this code with the vendor when you collect the vehicle, or when it is delivered to you. The
             vendor will validate this code to release the vehicle.
           </p>
-          <button className="vf-req-btn-primary" onClick={onVehicleCollected}>
+          <button className="vf-req-btn-primary vf-req-btn-fit" onClick={onVehicleCollected}>
             Vehicle Collected / Delivered
           </button>
         </div>

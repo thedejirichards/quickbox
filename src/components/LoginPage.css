@@ -3211,6 +3211,23 @@
   color: #fff;
 }
 
+.vf-car-view-btn {
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  color: #FF8200;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--sans);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vf-car-view-btn:hover {
+  background: #fef3e2;
+}
+
 /* ===================== VEHICLE FINANCE — REQUEST DETAIL ===================== */
 .vf-req {
   display: flex;
@@ -3643,6 +3660,23 @@
 .vf-req-btn-row .vf-req-btn-secondary {
   width: auto;
   flex: 1;
+}
+
+.vf-req-btn-primary.vf-req-btn-fit,
+.vf-req-btn-secondary.vf-req-btn-fit {
+  width: auto;
+  align-self: flex-start;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.vf-req-btn-row .vf-req-btn-fit {
+  flex: 0 0 auto;
+}
+
+.cvf-pin-form .vf-req-btn-fit,
+.cvf-delivery .vf-req-btn-fit {
+  align-self: center;
 }
 
 .cvf-report-file {

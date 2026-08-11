@@ -41,6 +41,15 @@ function CheckIcon() {
   );
 }
 
+function ClockIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
 function ChevronIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -54,6 +63,38 @@ function AlertTriangleIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
     </svg>
+  );
+}
+
+function formatNaira(value: number) {
+  return `₦${value.toLocaleString()}`;
+}
+
+interface EquityCardProps {
+  minEquity: number;
+  equityFunded: boolean;
+}
+
+function EquityCard({ minEquity, equityFunded }: EquityCardProps) {
+  return (
+    <div className="vf-req-info-card">
+      <div className="vf-req-info-title-row">
+        <h3 className="vf-req-info-title">Equity Contribution</h3>
+        <span className={`vf-status-badge ${equityFunded ? 'approved' : 'pending'}`}>
+          {equityFunded ? <CheckIcon /> : <ClockIcon />}
+          {equityFunded ? 'Funded' : 'Awaiting Funding'}
+        </span>
+      </div>
+      <div className="vf-req-amount-row">
+        <span>Required Contribution</span>
+        <strong>{formatNaira(minEquity)}</strong>
+      </div>
+      <p className="vf-req-hint">
+        {equityFunded
+          ? 'Your equity contribution has been received.'
+          : 'This will be processed automatically once you confirm and sign with your PIN.'}
+      </p>
+    </div>
   );
 }
 
@@ -141,36 +182,41 @@ export function InspectionSection({
 }
 
 interface PinSigningSectionProps {
+  minEquity: number;
+  equityFunded: boolean;
   onSubmit: (pin: string) => void;
 }
 
-export function PinSigningSection({ onSubmit }: PinSigningSectionProps) {
+export function PinSigningSection({ minEquity, equityFunded, onSubmit }: PinSigningSectionProps) {
   const [pin, setPin] = useState('');
 
   return (
-    <div className="vf-req-info-card ol-section">
-      <h3 className="vf-req-info-title">Offer &amp; Signing</h3>
-      <form
-        className="cvf-pin-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit(pin);
-        }}
-      >
-        <p className="cvf-pin-text">Enter your 4-digit token to digitally sign the Offer Letter.</p>
-        <input
-          type="password"
-          inputMode="numeric"
-          maxLength={4}
-          className="cvf-pin-input"
-          value={pin}
-          onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-          placeholder="••••"
-          required
-        />
-        <button type="submit" className="vf-req-btn-primary vf-req-btn-fit" disabled={pin.length !== 4}>Confirm &amp; Sign</button>
-      </form>
-    </div>
+    <>
+      <EquityCard minEquity={minEquity} equityFunded={equityFunded} />
+      <div className="vf-req-info-card ol-section">
+        <h3 className="vf-req-info-title">Offer &amp; Signing</h3>
+        <form
+          className="cvf-pin-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit(pin);
+          }}
+        >
+          <p className="cvf-pin-text">Enter your 4-digit token to digitally sign the Offer Letter.</p>
+          <input
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            className="cvf-pin-input"
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+            placeholder="••••"
+            required
+          />
+          <button type="submit" className="vf-req-btn-primary vf-req-btn-fit" disabled={pin.length !== 4}>Confirm &amp; Sign</button>
+        </form>
+      </div>
+    </>
   );
 }
 

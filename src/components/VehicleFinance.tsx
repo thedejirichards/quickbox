@@ -27,8 +27,8 @@ const howItWorks = [
 ];
 
 const dealers = [
-  { id: 1, name: 'Autochek', image: '/Dealers-Partners-card-image1.png' },
-  { id: 2, name: 'Autochek', image: '/Dealers-Partners-card-image2.png' },
+  { id: 1, name: 'Autocheck', image: '/Dealers-Partners-card-image1.png' },
+  { id: 2, name: 'Autocheck', image: '/Dealers-Partners-card-image2.png' },
 ];
 
 function StatusBadge({ status }: { status: VehicleFinanceRequest['status'] }) {

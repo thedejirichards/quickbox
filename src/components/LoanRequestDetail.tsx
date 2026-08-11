@@ -278,34 +278,6 @@ function RepaymentCard({ eligibleAmount, loanAmount, monthlyRepayment, insurance
   );
 }
 
-interface EquityCardProps {
-  minEquity: number;
-  equityFunded: boolean;
-}
-
-function EquityCard({ minEquity, equityFunded }: EquityCardProps) {
-  return (
-    <div className="vf-req-info-card">
-      <div className="vf-req-info-title-row">
-        <h3 className="vf-req-info-title">Equity Contribution</h3>
-        <span className={`vf-status-badge ${equityFunded ? 'approved' : 'pending'}`}>
-          {equityFunded ? <CheckIcon /> : <ClockIcon />}
-          {equityFunded ? 'Funded' : 'Awaiting Funding'}
-        </span>
-      </div>
-      <div className="vf-req-amount-row">
-        <span>Required Contribution</span>
-        <strong>{formatNaira(minEquity)}</strong>
-      </div>
-      <p className="vf-req-hint">
-        {equityFunded
-          ? 'Your equity contribution has been received.'
-          : 'This will be processed automatically once you accept the Offer Letter and confirm with your PIN.'}
-      </p>
-    </div>
-  );
-}
-
 export default function LoanRequestDetail({ request, accountType, displayName, onBack, onUpdateRequest, onUpdateCar }: LoanRequestDetailProps) {
   const isFleetView = accountType === 'business';
   // Fall back to the request itself as a single car if it predates per-car tracking.
@@ -476,7 +448,6 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
                   monthlyRepayment={monthlyRepayment}
                   insurancePremium={insurancePremium}
                 />
-                <EquityCard minEquity={minEquity} equityFunded={equityFunded} />
 
                 <div className="vf-req-info-card">
                   <h3 className="vf-req-info-title">Next Step</h3>
@@ -513,7 +484,11 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
               onAccept={() => updateActive({ corporateStage: 'pin' })}
             />
           ) : active.corporateStage === 'pin' ? (
-            <PinSigningSection onSubmit={() => updateActive({ corporateStage: 'processing' })} />
+            <PinSigningSection
+              minEquity={minEquity}
+              equityFunded={equityFunded}
+              onSubmit={() => updateActive({ corporateStage: 'processing' })}
+            />
           ) : active.corporateStage === 'processing' || active.corporateStage === 'delivery-code' ? (
             <ProcessingSection
               subStage={active.corporateStage}

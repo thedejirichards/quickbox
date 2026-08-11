@@ -74,7 +74,7 @@ const stats = [
 ];
 
 const testimonials = [
-  { id: 1, name: 'Adedayo Adewuyi', location: 'Lagos', quote: 'Been thinking of buying a car for a while but insufficient funds, I couldn’t. I was online on Instagram and got redirected to the Autochek partner scheme. The team reached out to me and the rest is history.' },
+  { id: 1, name: 'Adedayo Adewuyi', location: 'Lagos', quote: 'Been thinking of buying a car for a while but insufficient funds, I couldn’t. I was online on Instagram and got redirected to the Autocheck partner scheme. The team reached out to me and the rest is history.' },
   { id: 2, name: 'Joy Idima', location: 'Abuja', quote: 'Impressed with their process! I recently bought a car through this partner scheme. First of all, the inspection report was comprehensive and the car condition was 100% in line with the report.' },
   { id: 3, name: 'Albert Ogedengbe', location: 'Rivers', quote: 'My experience was good. Initially I was scared but what interested me the most was a detailed inspection report. Their staff were professional and I got the car at a very good price.' },
 ];
@@ -93,7 +93,7 @@ export default function VendorSite({ accountType, onBack, onBnplComplete, onCorp
   return (
     <div className="vs-page">
       <div className="vs-bridge">
-        <span>You’ve left QuickBox — you’re now on Autochek, our vehicle finance partner site.</span>
+        <span>You’ve left QuickBox — you’re now on Autocheck, our vehicle finance partner site.</span>
         <button onClick={onBack}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6" />
@@ -109,7 +109,7 @@ export default function VendorSite({ accountType, onBack, onBnplComplete, onCorp
               <CarThumbIcon />
             </span>
             <div>
-              <div className="vs-logo-text" onClick={() => setSelectedCar(null)}>Autochek</div>
+              <div className="vs-logo-text" onClick={() => setSelectedCar(null)}>Autocheck</div>
               <div className="vs-logo-sub">Powered by QuickBox</div>
             </div>
           </div>
@@ -278,7 +278,7 @@ export default function VendorSite({ accountType, onBack, onBnplComplete, onCorp
           <div className="vs-footer-grid">
             <div className="vs-footer-item">
               <div>Text us</div>
-              <div>help@autochek.com</div>
+              <div>help@autocheck.com</div>
             </div>
             <div className="vs-footer-item">
               <div>Call us</div>

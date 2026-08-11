@@ -128,6 +128,10 @@ export default function BvnValidation({ onSendOtp }: BvnValidationProps) {
                 <span className="customer-info-label">Gender</span>
                 <span className="customer-info-value">{customer.gender}</span>
               </div>
+              <div className="customer-info-row">
+                <span className="customer-info-label">NIN</span>
+                <span className="customer-info-value">{customer.nin}</span>
+              </div>
             </div>
           )}
 
@@ -136,6 +140,15 @@ export default function BvnValidation({ onSendOtp }: BvnValidationProps) {
               <p>
                 An OTP will be sent to the phone number registered with your {activeTab === 'bvn' ? 'BVN' : 'Account Number'}:{' '}
                 <strong>{maskPhone(customer.phone)}</strong>
+              </p>
+            </div>
+          )}
+
+          {stage === 'confirm' && customer && (
+            <div className="otp-message">
+              <p>
+                Your details, including your NIN, were fetched and auto-filled from your bank records. Once you
+                proceed, your verification will be completed and you'll receive feedback within 24-48 hours.
               </p>
             </div>
           )}

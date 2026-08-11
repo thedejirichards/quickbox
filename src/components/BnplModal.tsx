@@ -74,7 +74,7 @@ export default function BnplModal({ amount, onClose, onComplete }: BnplModalProp
               </svg>
             </span>
             <div>
-              <div className="bnpl-brand-name">Autochek</div>
+              <div className="bnpl-brand-name">Autocheck</div>
               <div className="bnpl-brand-sub">Powered by QuickBox</div>
             </div>
           </div>

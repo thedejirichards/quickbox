@@ -114,7 +114,7 @@ export default function OfferLetterSection({ fileName, dealer, dateLabel, totalP
         Review the Repayment Information above alongside the insurance premium and processing fee before accepting.
       </p>
 
-      <button className="vf-req-btn-primary cvf-action-btn vf-req-btn-fit" onClick={onAccept}>
+      <button className="vf-req-btn-primary cvf-action-btn vf-req-btn-fit vf-req-btn-end" onClick={onAccept}>
         <CheckIconWhite />
         Accept Offer Letter
       </button>

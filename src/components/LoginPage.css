@@ -3733,6 +3733,7 @@
 
 .vf-req-btn-row {
   display: flex;
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -3757,6 +3758,11 @@
 .cvf-pin-form .vf-req-btn-fit,
 .cvf-delivery .vf-req-btn-fit {
   align-self: center;
+}
+
+.vf-req-btn-primary.vf-req-btn-end,
+.vf-req-btn-secondary.vf-req-btn-end {
+  align-self: flex-end;
 }
 
 .cvf-report-file {

@@ -273,7 +273,7 @@ export function CompletedSection({ onGoHome }: CompletedSectionProps) {
         Your insurance certificate has been sent to your registered email. This financing request is now
         complete.
       </p>
-      <button className="vf-req-btn-primary vf-req-btn-fit" onClick={onGoHome}>
+      <button className="vf-req-btn-primary vf-req-btn-fit vf-req-btn-end" onClick={onGoHome}>
         Back to Home
       </button>
     </div>

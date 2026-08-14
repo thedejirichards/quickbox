@@ -151,6 +151,12 @@
   gap: 16px;
 }
 
+.bnpl-form-hint {
+  margin: -8px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
 .bnpl-form label {
   display: flex;
   flex-direction: column;
@@ -172,6 +178,12 @@
 
 .bnpl-form input:focus {
   border-color: #E6007E;
+}
+
+.bnpl-form input:disabled {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: default;
 }
 
 .bnpl-form select {

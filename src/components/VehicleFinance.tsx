@@ -8,6 +8,7 @@ interface VehicleFinanceProps {
   accountType: 'individual' | 'business';
   displayName: string;
   onInitiateRequest: () => void;
+  onGoHome: () => void;
   requests: VehicleFinanceRequest[];
   initialTab?: 'new' | 'pending' | 'approved';
   onUpdateRequest: (id: string, updates: Partial<VehicleFinanceRequest>) => void;
@@ -121,7 +122,7 @@ function RequestsTable({ title, requests, emptyMessage, onView }: RequestsTableP
   );
 }
 
-export default function VehicleFinance({ accountType, displayName, onInitiateRequest, requests, initialTab = 'new', onUpdateRequest, onUpdateCar }: VehicleFinanceProps) {
+export default function VehicleFinance({ accountType, displayName, onInitiateRequest, onGoHome, requests, initialTab = 'new', onUpdateRequest, onUpdateCar }: VehicleFinanceProps) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [viewingRequestId, setViewingRequestId] = useState<string | null>(null);
   const viewingRequest = requests.find((r) => r.id === viewingRequestId) ?? null;
@@ -148,6 +149,7 @@ export default function VehicleFinance({ accountType, displayName, onInitiateReq
           accountType={accountType}
           displayName={displayName}
           onBack={() => setViewingRequestId(null)}
+          onGoHome={onGoHome}
           onUpdateRequest={onUpdateRequest}
           onUpdateCar={onUpdateCar}
         />
@@ -259,6 +261,19 @@ export default function VehicleFinance({ accountType, displayName, onInitiateReq
         </button>
       </div>
 
+      {docStatus === 'pending' && (
+        <div className="vf-pending-note">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" className="vf-pending-note-icon">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <p>
+            Your prequalification request has been submitted and is being reviewed. We&apos;ll notify you with
+            feedback within 48 hours.
+          </p>
+        </div>
+      )}
+
       <div className="vf-section">
         <h3 className="vf-section-title">How it works</h3>
         <div className="vf-steps-grid">
@@ -307,6 +322,7 @@ export default function VehicleFinance({ accountType, displayName, onInitiateReq
       {showDocModal && accountType === 'business' && (
         <BusinessDocumentationModal
           onClose={() => setShowDocModal(false)}
+          displayName={displayName}
           initialData={submittedBusinessDocs}
           readOnly={docStatus !== 'not-submitted'}
           onSubmit={(data) => {
@@ -320,6 +336,7 @@ export default function VehicleFinance({ accountType, displayName, onInitiateReq
       {showDocModal && accountType === 'individual' && (
         <PersonalDocumentationModal
           onClose={() => setShowDocModal(false)}
+          displayName={displayName}
           initialData={submittedDocs}
           readOnly={docStatus !== 'not-submitted'}
           onSubmit={(data) => {

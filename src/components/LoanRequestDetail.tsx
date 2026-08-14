@@ -10,6 +10,7 @@ interface LoanRequestDetailProps {
   accountType: 'individual' | 'business';
   displayName: string;
   onBack: () => void;
+  onGoHome: () => void;
   onUpdateRequest: (id: string, updates: Partial<VehicleFinanceRequest>) => void;
   onUpdateCar: (requestId: string, carId: string, updates: Partial<RequestedCar>) => void;
 }
@@ -278,7 +279,7 @@ function RepaymentCard({ eligibleAmount, loanAmount, monthlyRepayment, insurance
   );
 }
 
-export default function LoanRequestDetail({ request, accountType, displayName, onBack, onUpdateRequest, onUpdateCar }: LoanRequestDetailProps) {
+export default function LoanRequestDetail({ request, accountType, displayName, onBack, onGoHome, onUpdateRequest, onUpdateCar }: LoanRequestDetailProps) {
   const isFleetView = accountType === 'business';
   // Fall back to the request itself as a single car if it predates per-car tracking.
   const hasCars = Boolean(request.cars && request.cars.length > 0);
@@ -496,7 +497,7 @@ export default function LoanRequestDetail({ request, accountType, displayName, o
               onVehicleCollected={() => updateActive({ corporateStage: 'completed', status: 'approved' })}
             />
           ) : active.corporateStage === 'completed' ? (
-            <CompletedSection />
+            <CompletedSection onGoHome={onGoHome} />
           ) : null}
         </>
       )}

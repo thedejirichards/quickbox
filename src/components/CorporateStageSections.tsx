@@ -255,7 +255,11 @@ export function ProcessingSection({ subStage, deliveryCode, onVehicleCollected }
   );
 }
 
-export function CompletedSection() {
+interface CompletedSectionProps {
+  onGoHome: () => void;
+}
+
+export function CompletedSection({ onGoHome }: CompletedSectionProps) {
   return (
     <div className="vf-req-info-card ol-section cvf-completed-card">
       <div className="cvf-completed-icon">
@@ -269,6 +273,9 @@ export function CompletedSection() {
         Your insurance certificate has been sent to your registered email. This financing request is now
         complete.
       </p>
+      <button className="vf-req-btn-primary vf-req-btn-fit" onClick={onGoHome}>
+        Back to Home
+      </button>
     </div>
   );
 }

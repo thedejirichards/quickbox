@@ -5,6 +5,7 @@ import VendorCarDetail from './VendorCarDetail';
 
 interface VendorSiteProps {
   accountType: 'individual' | 'business';
+  displayName: string;
   onBack: () => void;
   onBnplComplete: (car: VendorCar) => void;
   onCorporateFinanceComplete: (car: VendorCar, quantity: number) => void;
@@ -87,7 +88,7 @@ const CarThumbIcon = () => (
   </svg>
 );
 
-export default function VendorSite({ accountType, onBack, onBnplComplete, onCorporateFinanceComplete }: VendorSiteProps) {
+export default function VendorSite({ accountType, displayName, onBack, onBnplComplete, onCorporateFinanceComplete }: VendorSiteProps) {
   const [selectedCar, setSelectedCar] = useState<VendorCar | null>(null);
 
   return (
@@ -124,6 +125,7 @@ export default function VendorSite({ accountType, onBack, onBnplComplete, onCorp
             car={selectedCar}
             similarCars={vendorCars.filter((c) => c.id !== selectedCar.id)}
             accountType={accountType}
+            displayName={displayName}
             onBackToListing={() => setSelectedCar(null)}
             onSelectCar={(car) => setSelectedCar(car)}
             onBnplComplete={onBnplComplete}

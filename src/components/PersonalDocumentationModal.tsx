@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import TransferOwnershipAttestation from './TransferOwnershipAttestation';
+import { idTypeLabels, lookupIndividualIdRecord } from './bankIdRecords';
 
 export interface DocumentationData {
-  transferFileName: string;
+  transferOwnershipAttested: boolean;
   staffIdFileName: string;
   idType: string;
   idNumber: string;
@@ -10,16 +12,10 @@ export interface DocumentationData {
 interface PersonalDocumentationModalProps {
   onClose: () => void;
   onSubmit: (data: DocumentationData) => void;
+  displayName: string;
   initialData?: DocumentationData | null;
   readOnly?: boolean;
 }
-
-const idTypeOptions = [
-  { value: 'nin', label: 'National Identity Number (NIN)', fieldLabel: 'NIN', placeholder: 'Enter your NIN' },
-  { value: 'passport', label: 'International Passport', fieldLabel: 'Passport Number', placeholder: 'Enter your passport number' },
-  { value: 'drivers-license', label: "Driver's License", fieldLabel: "Driver's License Number", placeholder: "Enter your driver's license number" },
-  { value: 'voters-card', label: "Voter's Card", fieldLabel: "Voter's Card Number", placeholder: "Enter your voter's card number" },
-];
 
 function AttachIcon() {
   return (
@@ -40,22 +36,23 @@ function TrashIcon() {
 
 type Step = 'form' | 'confirm' | 'success';
 
-export default function PersonalDocumentationModal({ onClose, onSubmit, initialData, readOnly = false }: PersonalDocumentationModalProps) {
+export default function PersonalDocumentationModal({ onClose, onSubmit, displayName, initialData, readOnly = false }: PersonalDocumentationModalProps) {
   const [step, setStep] = useState<Step>('form');
-  const [transferFileName, setTransferFileName] = useState(initialData?.transferFileName ?? '');
+  const [transferOwnershipAttested, setTransferOwnershipAttested] = useState(initialData?.transferOwnershipAttested ?? false);
   const [staffIdFileName, setStaffIdFileName] = useState(initialData?.staffIdFileName ?? '');
-  const [idType, setIdType] = useState(initialData?.idType ?? '');
-  const [idNumber, setIdNumber] = useState(initialData?.idNumber ?? '');
   const [error, setError] = useState('');
 
-  const selectedIdType = idTypeOptions.find((opt) => opt.value === idType);
+  const bankRecord = lookupIndividualIdRecord(displayName);
+  const idType = initialData?.idType ?? bankRecord?.idType ?? '';
+  const idNumber = initialData?.idNumber ?? bankRecord?.idNumber ?? '';
+  const idTypeInfo = idTypeLabels[idType];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (readOnly) return;
     setError('');
 
-    if (!transferFileName || !staffIdFileName || !idType || !idNumber) {
+    if (!transferOwnershipAttested || !staffIdFileName || !idType || !idNumber) {
       setError('Please complete all required fields.');
       return;
     }
@@ -77,12 +74,12 @@ export default function PersonalDocumentationModal({ onClose, onSubmit, initialD
           </div>
           <h3>Confirm Submission</h3>
           <p>
-            You're about to submit your blank transfer of ownership, staff ID, and {selectedIdType?.fieldLabel ?? 'ID'} for review. Do you want to proceed?
+            You're about to submit your blank transfer of ownership, staff ID, and {idTypeInfo?.fieldLabel ?? 'ID'} for review. Do you want to proceed?
           </p>
           <button
             className="modal-button"
             onClick={() => {
-              onSubmit({ transferFileName, staffIdFileName, idType, idNumber });
+              onSubmit({ transferOwnershipAttested, staffIdFileName, idType, idNumber });
               setStep('success');
             }}
           >
@@ -129,57 +126,15 @@ export default function PersonalDocumentationModal({ onClose, onSubmit, initialD
         </p>
 
         <form onSubmit={handleSubmit} className="doc-modal-form">
-          <div className="doc-upload-group">
-            <label className="doc-field-label">
-              Blank transfer of ownership <span className="doc-required">*</span>
-              <span className="doc-info-icon" title="A signed blank transfer of ownership form is required">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="11" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              </span>
-            </label>
-            {readOnly ? (
-              <div className={`doc-upload-box readonly ${transferFileName ? 'filled' : ''}`}>
-                <span className="doc-upload-icon"><AttachIcon /></span>
-                <span className="doc-upload-text">{transferFileName}</span>
-              </div>
-            ) : (
-              <label className={`doc-upload-box ${transferFileName ? 'filled' : ''}`}>
-                <span className="doc-upload-icon"><AttachIcon /></span>
-                <span className="doc-upload-text">{transferFileName || 'Click to attach a file'}</span>
-                {transferFileName && (
-                  <button
-                    type="button"
-                    className="doc-remove-btn"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTransferFileName(''); }}
-                    aria-label="Remove file"
-                  >
-                    <TrashIcon />
-                  </button>
-                )}
-                <input
-                  type="file"
-                  hidden
-                  onChange={(e) => { setTransferFileName(e.target.files?.[0]?.name ?? ''); setError(''); }}
-                />
-              </label>
-            )}
-            {!readOnly && (
-              <a href="#" className="doc-template-link" onClick={(e) => e.preventDefault()}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5" />
-                  <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-                </svg>
-                Download Template
-              </a>
-            )}
-          </div>
+          <TransferOwnershipAttestation
+            checked={transferOwnershipAttested}
+            onChange={(checked) => { setTransferOwnershipAttested(checked); setError(''); }}
+            readOnly={readOnly}
+          />
 
           <div className="doc-upload-group">
             <label className="doc-field-label">
-              Staff ID / Confirmation or Promotion Letter <span className="doc-required">*</span>
+              Proof of employment <span className="doc-required">*</span>
             </label>
             {readOnly ? (
               <div className={`doc-upload-box readonly ${staffIdFileName ? 'filled' : ''}`}>
@@ -210,40 +165,17 @@ export default function PersonalDocumentationModal({ onClose, onSubmit, initialD
           </div>
 
           <h4 className="doc-section-heading">Government issued ID</h4>
+          <p className="doc-field-hint">Retrieved from your records on file with the bank.</p>
 
           <div className="doc-field-group">
-            <label className="doc-field-label" htmlFor="doc-id-type">
-              Type of ID <span className="doc-required">*</span>
-            </label>
-            <select
-              id="doc-id-type"
-              value={idType}
-              disabled={readOnly}
-              onChange={(e) => { setIdType(e.target.value); setIdNumber(''); setError(''); }}
-              required
-            >
-              <option value="">Select ID type</option>
-              {idTypeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            <label className="doc-field-label" htmlFor="doc-id-type">Type of ID</label>
+            <input id="doc-id-type" type="text" value={idTypeInfo?.label ?? 'Not on file'} readOnly disabled />
           </div>
 
-          {selectedIdType && (
+          {idTypeInfo && (
             <div className="doc-field-group">
-              <label className="doc-field-label" htmlFor="doc-id-number">
-                {selectedIdType.fieldLabel} <span className="doc-required">*</span>
-              </label>
-              <input
-                id="doc-id-number"
-                type="text"
-                placeholder={selectedIdType.placeholder}
-                value={idNumber}
-                readOnly={readOnly}
-                disabled={readOnly}
-                onChange={(e) => { setIdNumber(e.target.value); setError(''); }}
-                required
-              />
+              <label className="doc-field-label" htmlFor="doc-id-number">{idTypeInfo.fieldLabel}</label>
+              <input id="doc-id-number" type="text" value={idNumber} readOnly disabled />
             </div>
           )}
 

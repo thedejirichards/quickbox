@@ -7,6 +7,7 @@ interface VendorCarDetailProps {
   car: VendorCar;
   similarCars: VendorCar[];
   accountType: 'individual' | 'business';
+  displayName: string;
   onBackToListing: () => void;
   onSelectCar: (car: VendorCar) => void;
   onBnplComplete: (car: VendorCar) => void;
@@ -20,7 +21,7 @@ function formatMileage(mileage: number) {
   return `${mileage.toLocaleString()} km`;
 }
 
-export default function VendorCarDetail({ car, similarCars, accountType, onBackToListing, onSelectCar, onBnplComplete, onCorporateFinanceComplete }: VendorCarDetailProps) {
+export default function VendorCarDetail({ car, similarCars, accountType, displayName, onBackToListing, onSelectCar, onBnplComplete, onCorporateFinanceComplete }: VendorCarDetailProps) {
   const [activeSlot, setActiveSlot] = useState(0);
   const [showBnpl, setShowBnpl] = useState(false);
   const [showCorporateFinance, setShowCorporateFinance] = useState(false);
@@ -101,6 +102,7 @@ export default function VendorCarDetail({ car, similarCars, accountType, onBackT
       {showBnpl && (
         <BnplModal
           amount={car.price}
+          displayName={displayName}
           onClose={() => setShowBnpl(false)}
           onComplete={() => onBnplComplete(car)}
         />

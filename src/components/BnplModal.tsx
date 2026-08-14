@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import './BnplModal.css';
+import { lookupCustomerProfile } from './bankIdRecords';
 
 interface BnplModalProps {
   amount: string;
+  displayName: string;
   onClose: () => void;
   onComplete: () => void;
 }
@@ -30,11 +32,9 @@ const QuickBucksBadge = ({ size = 44 }: { size?: number }) => (
   </div>
 );
 
-export default function BnplModal({ amount, onClose, onComplete }: BnplModalProps) {
+export default function BnplModal({ amount, displayName, onClose, onComplete }: BnplModalProps) {
   const [step, setStep] = useState<Step>('payment');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const profile = lookupCustomerProfile(displayName);
   const [paymentSelected, setPaymentSelected] = useState(false);
   const [reference] = useState(() => `R${Math.floor(100000000 + Math.random() * 900000000)}`);
 
@@ -158,17 +158,18 @@ export default function BnplModal({ amount, onClose, onComplete }: BnplModalProp
                 setStep('fetching');
               }}
             >
+              <p className="bnpl-form-hint">Auto-filled from your Access Bank profile</p>
               <label>
                 Fullname
-                <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="e.g. Solomon Adebayo" />
+                <input value={profile?.fullName ?? ''} readOnly disabled />
               </label>
               <label>
                 Email
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. solomon@gmail.com" />
+                <input type="email" value={profile?.email ?? ''} readOnly disabled />
               </label>
               <label>
                 Phone Number (Number attached to your BVN)
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g 08123456789" />
+                <input value={profile?.phone ?? ''} readOnly disabled />
               </label>
               <button type="submit" className="bnpl-primary">Continue</button>
             </form>

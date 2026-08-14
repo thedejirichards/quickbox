@@ -204,6 +204,7 @@ export default function Dashboard({ accountType, displayName, verificationComple
     return (
       <VendorSite
         accountType={accountType}
+        displayName={displayName}
         onBack={() => setDashboardStep('home')}
         onBnplComplete={handleBnplComplete}
         onCorporateFinanceComplete={handleCorporateFinanceComplete}
@@ -327,6 +328,7 @@ export default function Dashboard({ accountType, displayName, verificationComple
               accountType={accountType}
               displayName={displayName}
               onInitiateRequest={() => setDashboardStep('partners')}
+              onGoHome={() => setActiveNav('home')}
               requests={vehicleFinanceRequests}
               initialTab={vfInitialTab}
               onUpdateRequest={updateVehicleFinanceRequest}

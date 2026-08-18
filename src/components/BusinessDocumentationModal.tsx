@@ -5,6 +5,7 @@ import { idTypeLabels, lookupBusinessDirectorRecords } from './bankIdRecords';
 
 export interface BusinessDocumentationData {
   attestations: Record<string, boolean>;
+  businessRegistrationFileName: string;
   transferOwnershipAttested: boolean;
 }
 
@@ -14,6 +15,23 @@ interface BusinessDocumentationModalProps {
   displayName: string;
   initialData?: BusinessDocumentationData | null;
   readOnly?: boolean;
+}
+
+function AttachIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+    </svg>
+  );
 }
 
 type Step = 'documents' | 'directors' | 'confirm' | 'submitting' | 'success';
@@ -33,15 +51,6 @@ const businessDocuments: BusinessDocument[] = [
     details: [
       'A resolution passed by the board of directors authorizing the company to obtain the facility and pledge the financed vehicle(s) as collateral.',
       'The resolution must be signed by all directors and the company secretary, and dated within the last 12 months.',
-    ],
-  },
-  {
-    key: 'business-registration',
-    title: 'Certificate of business registration',
-    attestationText: "I attest that the company's Certificate of Business Registration is available",
-    details: [
-      "Evidence of the company's registration with the Corporate Affairs Commission (CAC), confirming it is duly incorporated and authorized to conduct business in Nigeria.",
-      'Includes the CAC certificate along with the relevant registration forms (e.g. CAC 2 and CAC 7).',
     ],
   },
   {
@@ -78,12 +87,15 @@ function CloseButton({ onClose }: { onClose: () => void }) {
 export default function BusinessDocumentationModal({ onClose, onSubmit, displayName, initialData, readOnly = false }: BusinessDocumentationModalProps) {
   const [step, setStep] = useState<Step>('documents');
   const [attestations, setAttestations] = useState<Record<string, boolean>>(initialData?.attestations ?? {});
+  const [businessRegistrationFileName, setBusinessRegistrationFileName] = useState(initialData?.businessRegistrationFileName ?? '');
   const [transferOwnershipAttested, setTransferOwnershipAttested] = useState(initialData?.transferOwnershipAttested ?? false);
   const [error, setError] = useState('');
 
   const directors = lookupBusinessDirectorRecords(displayName);
 
-  const allDocsUploaded = businessDocuments.every((doc) => attestations[doc.key]) && transferOwnershipAttested;
+  const allDocsUploaded = businessDocuments.every((doc) => attestations[doc.key])
+    && !!businessRegistrationFileName
+    && transferOwnershipAttested;
 
   const handleDocumentsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +121,16 @@ export default function BusinessDocumentationModal({ onClose, onSubmit, displayN
           <p className="doc-modal-subtitle">Here is a summary of the documents you submitted.</p>
 
           <div className="doc-modal-form">
+            <div className="doc-upload-group">
+              <label className="doc-field-label">
+                Certificate of business registration <span className="doc-required">*</span>
+              </label>
+              <div className={`doc-upload-box readonly ${businessRegistrationFileName ? 'filled' : ''}`}>
+                <span className="doc-upload-icon"><AttachIcon /></span>
+                <span className="doc-upload-text">{businessRegistrationFileName}</span>
+              </div>
+            </div>
+
             {businessDocuments.map((doc) => (
               <DocumentAttestation
                 key={doc.key}
@@ -160,6 +182,31 @@ export default function BusinessDocumentationModal({ onClose, onSubmit, displayN
           <p className="doc-modal-subtitle">Please submit the following required documents for Vehicle Finance</p>
 
           <form onSubmit={handleDocumentsSubmit} className="doc-modal-form">
+            <div className="doc-upload-group">
+              <label className="doc-field-label">
+                Certificate of business registration <span className="doc-required">*</span>
+              </label>
+              <label className={`doc-upload-box ${businessRegistrationFileName ? 'filled' : ''}`}>
+                <span className="doc-upload-icon"><AttachIcon /></span>
+                <span className="doc-upload-text">{businessRegistrationFileName || 'Click to attach a file'}</span>
+                {businessRegistrationFileName && (
+                  <button
+                    type="button"
+                    className="doc-remove-btn"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setBusinessRegistrationFileName(''); }}
+                    aria-label="Remove file"
+                  >
+                    <TrashIcon />
+                  </button>
+                )}
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => { setBusinessRegistrationFileName(e.target.files?.[0]?.name ?? ''); setError(''); }}
+                />
+              </label>
+            </div>
+
             {businessDocuments.map((doc) => (
               <DocumentAttestation
                 key={doc.key}
@@ -281,7 +328,7 @@ export default function BusinessDocumentationModal({ onClose, onSubmit, displayN
           Your prequalification documents are currently undergoing review. You will be notified once
           they have been approved and then you can proceed to request for Vehicle Finance
         </p>
-        <button className="modal-button" onClick={() => onSubmit({ attestations, transferOwnershipAttested })}>RETURN</button>
+        <button className="modal-button" onClick={() => onSubmit({ attestations, businessRegistrationFileName, transferOwnershipAttested })}>RETURN</button>
       </div>
     </div>
   );
